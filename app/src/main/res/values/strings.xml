@@ -1,0 +1,37 @@
+<resources>
+    <string name="app_name">MailManager</string>
+    <string name="action_settings">Settings</string>
+    <string-array name="nav_drawer_items">
+        <item >Входящие</item>
+        <item >Отправленные</item>
+        <item >Черновики</item>
+        <item >Удаленные</item>
+        <item >Написать письмо</item>
+    </string-array>
+    <array name="nav_drawer_icons">
+        <item>@drawable/inbox</item>
+        <item>@drawable/outbox</item>
+        <item>@drawable/draft</item>
+        <item>@drawable/deleted</item>
+        <item>@drawable/send</item>
+    </array>
+    <string name="add_file">Прикрепить файл</string>
+    <string name="dialog_select">Select</string>
+    <string name="dialog_cancel">Cancel</string>
+    <string name="dialog_ok">OK</string>
+    <string name="dialog_new_file">New</string>
+    <string name="dialog_create_file">Create file</string>
+    <string name="dialog_create_folder">Create folder</string>
+    <string name="dialog_accept">Accept</string>
+    <string name="dialog_enter_file_name">Enter the name of the file that you want to create</string>
+    <string name="dialog_enter_folder_name">Enter the name of the folder that you want to create</string>
+    <string name="dialog_yes">Yes</string>
+    <string name="dialog_no">No</string>
+    <string name="dialog_confirm_select_file">Are you sure that you want to select the file \'$file_name\'?</string>
+    <string name="dialog_confirm_create_file">The file \'$file_name\' do not exists, are you sure that you want to create it?</string>
+    <string name="dialog_confirm_select_folder">Are you sure that you want to select the folder \'$file_name\'?</string>
+    <string name="dialog_confirm_create_folder">The folder \'$file_name\' do not exists, are you sure that you want to create it?</string>
+    <color name="dialog_backgroud">#000</color>
+    <color name="dialog_active_file">#fff</color>
+    <color name="dialog_inactive_file">#888</color>
+</resources>
