@@ -66,6 +66,7 @@ public class SenderMail extends PatternActivity {
 
         initializeData();
 
+        filePath = "";
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
@@ -86,11 +87,12 @@ public class SenderMail extends PatternActivity {
                     m.setFrom(email); // who is sending the email
                     m.setSubject(subjectEditText.getText().toString());
                     m.setBody(textEditText.getText().toString());
-//                try {
-//                    m.addAttachment(filePath);
-//                } catch (Exception e) {
-//                    e.printStackTrace();
-//                }
+                try {
+                    if (!filePath.equals(""))
+                    m.addAttachment(filePath);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
                     try {
                         if (m.send()) {
                             // success
