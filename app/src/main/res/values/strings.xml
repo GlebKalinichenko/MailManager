@@ -7,6 +7,7 @@
         <item >Черновики</item>
         <item >Удаленные</item>
         <item >Написать письмо</item>
+        <item >Сменить аккаунт</item>
     </string-array>
     <array name="nav_drawer_icons">
         <item>@drawable/inbox</item>
@@ -14,8 +15,10 @@
         <item>@drawable/draft</item>
         <item>@drawable/deleted</item>
         <item>@drawable/send</item>
+        <item>@drawable/account</item>
     </array>
     <string name="add_file">Прикрепить файл</string>
+    <string name="exit">Выйти</string>
     <string name="dialog_select">Select</string>
     <string name="dialog_cancel">Cancel</string>
     <string name="dialog_ok">OK</string>
