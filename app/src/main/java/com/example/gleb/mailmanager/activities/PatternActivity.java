@@ -1,4 +1,4 @@
-package com.example.gleb.mailmanager;
+package com.example.gleb.mailmanager.activities;
 
 import android.content.res.TypedArray;
 import android.support.v4.app.ActionBarDrawerToggle;
