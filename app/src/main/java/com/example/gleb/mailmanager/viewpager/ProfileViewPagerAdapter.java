@@ -4,7 +4,7 @@ import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentStatePagerAdapter;
 
-import com.example.gleb.mailmanager.InboxFragment;
+import com.example.gleb.mailmanager.fragments.InboxFragment;
 
 /**
  * Created by gleb on 14.07.15.
@@ -12,14 +12,17 @@ import com.example.gleb.mailmanager.InboxFragment;
 public class ProfileViewPagerAdapter extends FragmentStatePagerAdapter {
     private CharSequence Titles[]; // This will Store the Titles of the Tabs which are Going to be passed when AdminViewPagerAdapter is created
     private int NumbOfTabs; // Store the number of tabs, this will also be passed when the AdminViewPagerAdapter is created
-
+    private String email;
+    private String password;
 
     // Build a Constructor and assign the passed Values to appropriate values in the class
-    public ProfileViewPagerAdapter(FragmentManager fm, CharSequence mTitles[], int mNumbOfTabsumb) {
+    public ProfileViewPagerAdapter(FragmentManager fm, CharSequence mTitles[], int mNumbOfTabsumb, String email, String password) {
         super(fm);
 
         this.Titles = mTitles;
         this.NumbOfTabs = mNumbOfTabsumb;
+        this.email = email;
+        this.password = password;
 
     }
 
@@ -28,19 +31,19 @@ public class ProfileViewPagerAdapter extends FragmentStatePagerAdapter {
     public Fragment getItem(int position) {
         switch (position) {
             case 0:
-                InboxFragment tab1 = new InboxFragment();
+                InboxFragment tab1 = new InboxFragment(email, password);
                 return tab1;
 
             case 1:
-                InboxFragment tab2 = new InboxFragment();
+                InboxFragment tab2 = new InboxFragment(email, password);
                 return tab2;
 
             case 2:
-                InboxFragment tab3 = new InboxFragment();
+                InboxFragment tab3 = new InboxFragment(email, password);
                 return tab3;
 
             case 3:
-                InboxFragment tab4 = new InboxFragment();
+                InboxFragment tab4 = new InboxFragment(email, password);
                 return tab4;
 
         }
