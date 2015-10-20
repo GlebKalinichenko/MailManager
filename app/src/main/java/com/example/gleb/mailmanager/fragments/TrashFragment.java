@@ -91,23 +91,23 @@ public class TrashFragment extends PatternFragment {
         Log.d(TAG, "Host email " + host);
         switch (host){
             case "yandex.ru":
-                new Loader("imap.yandex.ru", email, password, "Удаленные").execute();
+                new Loader("imap.yandex.ru", email, password, "Удаленные", getContext()).execute();
                 break;
 
             case "yandex.ua":
-                new Loader("imap.yandex.ru", email, password, "Удаленные").execute();
+                new Loader("imap.yandex.ru", email, password, "Удаленные", getContext()).execute();
                 break;
 
             case "gmail.com":
-                new Loader("imap.googlemail.com", email, password, "Удаленные").execute();
+                new Loader("imap.googlemail.com", email, password, "Удаленные", getContext()).execute();
                 break;
 
             case "ukr.net":
-                new Loader("imap.ukr.net", email, password, "Удаленные").execute();
+                new Loader("imap.ukr.net", email, password, "Удаленные", getContext()).execute();
                 break;
 
             case "rambler.ru":
-                new Loader("imap.rambler.ru", email, password, "Удаленные").execute();
+                new Loader("imap.rambler.ru", email, password, "Удаленные", getContext()).execute();
                 break;
         }
 

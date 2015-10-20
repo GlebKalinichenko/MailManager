@@ -1,5 +1,6 @@
 package com.example.gleb.mailmanager.fragments;
 
+import android.content.Context;
 import android.os.AsyncTask;
 import android.os.Environment;
 import android.support.v4.app.Fragment;
@@ -166,12 +167,14 @@ abstract class PatternFragment extends Fragment {
         public String user;
         public String password;
         public String typeMail;
+        public Context context;
 
-        public Loader(String imapHost, String user, String password, String typeMail) {
+        public Loader(String imapHost, String user, String password, String typeMail, Context context) {
             this.imapHost = imapHost;
             this.user = user;
             this.password = password;
             this.typeMail = typeMail;
+            this.context = context;
         }
 
         @Override
@@ -221,13 +224,15 @@ abstract class PatternFragment extends Fragment {
                     }
 
                     Object content = messages[i].getContent();
+                    String[] parts = messages[i].getSentDate().toString().split(" ");
 
                     //mail content only string values or mail content images with different string values
                     if (content instanceof String) {
                         String body = (String) content;
                         Log.d(TAG, "SENT DATE String: " + messages[i].getSentDate());
                         //add date of mail
-                        arrayDateMail.add(String.valueOf(messages[i].getSentDate().getDate()) + "." + (messages[i].getSentDate().getMonth() + 1) + "." + (messages[i].getSentDate().getYear() % 100));
+                        arrayDateMail.add(String.valueOf(messages[i].getSentDate().getDate()) + "." + (messages[i].getSentDate().getMonth() + 1) + "."
+                                + (messages[i].getSentDate().getYear() % 100) + "-" + parts[3]);
                         //add subject of mail
                         arraySubject.add(messages[i].getSubject());
                         Log.d(TAG, "SUBJECT String: " + messages[i].getSubject());
@@ -237,7 +242,8 @@ abstract class PatternFragment extends Fragment {
                     } else if (content instanceof Multipart) {
                         Multipart mp = (Multipart) content;
                         BodyPart bp = mp.getBodyPart(0);
-                        arrayDateMail.add(String.valueOf(messages[i].getSentDate().getDate()) + "." + (messages[i].getSentDate().getMonth() + 1) + "." + (messages[i].getSentDate().getYear() % 100));
+                        arrayDateMail.add(String.valueOf(messages[i].getSentDate().getDate()) + "." + (messages[i].getSentDate().getMonth() + 1) + "."
+                                + (messages[i].getSentDate().getYear() % 100) + "-" + parts[3]);
                         Log.d(TAG, "SENT DATE Multipart: " + messages[i].getSentDate());
                         arraySubject.add(messages[i].getSubject());
                         Log.d(TAG, "SUBJECT Multipart: " + messages[i].getSubject());
@@ -258,7 +264,7 @@ abstract class PatternFragment extends Fragment {
         protected void onPostExecute(String[] value) {
             mailStructures = new ArrayList<>();
             mailStructures = readMail(email, typeMail);
-            RVAdapter adapter = new RVAdapter(mailStructures);
+            RVAdapter adapter = new RVAdapter(mailStructures, context);
             rv.setAdapter(adapter);
         }
     }
