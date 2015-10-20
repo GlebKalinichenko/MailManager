@@ -4,7 +4,10 @@ import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentStatePagerAdapter;
 
+import com.example.gleb.mailmanager.fragments.DraftFragment;
 import com.example.gleb.mailmanager.fragments.InboxFragment;
+import com.example.gleb.mailmanager.fragments.OutboxFragment;
+import com.example.gleb.mailmanager.fragments.TrashFragment;
 
 /**
  * Created by gleb on 14.07.15.
@@ -35,15 +38,15 @@ public class ProfileViewPagerAdapter extends FragmentStatePagerAdapter {
                 return tab1;
 
             case 1:
-                InboxFragment tab2 = new InboxFragment(email, password);
+                OutboxFragment tab2 = new OutboxFragment(email, password);
                 return tab2;
 
             case 2:
-                InboxFragment tab3 = new InboxFragment(email, password);
+                DraftFragment tab3 = new DraftFragment(email, password);
                 return tab3;
 
             case 3:
-                InboxFragment tab4 = new InboxFragment(email, password);
+                TrashFragment tab4 = new TrashFragment(email, password);
                 return tab4;
 
         }
