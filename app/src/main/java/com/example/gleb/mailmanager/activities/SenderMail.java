@@ -1,16 +1,17 @@
-package com.example.gleb.mailmanager;
+package com.example.gleb.mailmanager.activities;
 
 import android.app.Activity;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Bundle;
+import android.support.annotation.Nullable;
 import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActionBarDrawerToggle;
-import android.support.v4.view.ViewPager;
+import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentManager;
+import android.support.v4.app.FragmentTransaction;
 import android.support.v4.widget.DrawerLayout;
-import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -22,16 +23,17 @@ import android.widget.AbsListView;
 import android.widget.AdapterView;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.example.gleb.mailmanager.R;
 import com.example.gleb.mailmanager.filedialog.FileChooserActivity;
 import com.example.gleb.mailmanager.images.RoundImage;
+import com.example.gleb.mailmanager.mailutils.Mail;
 import com.example.gleb.mailmanager.navigationdrawer.NavDrawerItem;
 import com.example.gleb.mailmanager.navigationdrawer.NavDrawerListAdapter;
-import com.example.gleb.mailmanager.sliding.SlidingTabLayout;
-import com.example.gleb.mailmanager.viewpager.ProfileViewPagerAdapter;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -57,7 +59,8 @@ public class SenderMail extends PatternActivity {
     private int deletedMail;
     private int outBoxMail;
     private int draftMail;
-    private String filePath;
+    private ArrayList<String> filePath;
+    public ArrayList<String> a;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -66,7 +69,8 @@ public class SenderMail extends PatternActivity {
 
         initializeData();
 
-        filePath = "";
+        filePath = new ArrayList<String>();
+        a = new ArrayList<String>();
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
@@ -210,7 +214,7 @@ public class SenderMail extends PatternActivity {
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (resultCode == Activity.RESULT_OK) {
             boolean fileCreated = false;
-            filePath = "";
+            String attachPath = "";
             String name = "";
 
             Bundle bundle = data.getExtras();
@@ -220,17 +224,56 @@ public class SenderMail extends PatternActivity {
                     fileCreated = true;
                     File folder = (File) bundle.get(FileChooserActivity.OUTPUT_FILE_OBJECT);
                     name = bundle.getString(FileChooserActivity.OUTPUT_NEW_FILE_NAME);
-                    filePath = folder.getAbsolutePath() + "/" + name;
+                    attachPath = folder.getAbsolutePath() + "/" + name;
                 } else {
                     fileCreated = false;
                     File file = (File) bundle.get(FileChooserActivity.OUTPUT_FILE_OBJECT);
-                    filePath = file.getAbsolutePath();
+                    attachPath = file.getAbsolutePath();
                 }
             }
+
+            filePath.add(attachPath);
 
             String message = fileCreated? "File created" : "File opened";
             message += ": " + filePath;
             Toast.makeText(SenderMail.this, message, Toast.LENGTH_LONG).show();
+
+            a.add(attachPath.substring(attachPath.lastIndexOf("/") + 1));
+            FragmentManager fragmentManager = getSupportFragmentManager();
+            FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
+            Log.d(TAG, "Name " + filePath);
+            ArchiveFragment fragment = new ArchiveFragment(a);
+            fragmentTransaction.add(R.id.fragment_container, fragment);
+            fragmentTransaction.commitAllowingStateLoss();
         }
+    }
+
+    private class ArchiveFragment extends Fragment {
+        public static final String TAG = "TAG";
+        public ArrayList<String> name;
+
+        public ArchiveFragment(ArrayList<String> name) {
+            this.name = name;
+        }
+
+        @Override
+        public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+            View v =inflater.inflate(R.layout.attach_archive, container,false);
+            LinearLayout layout = (LinearLayout) v.findViewById(R.id.LinearLayout1);
+            for (int i = 0; i < name.size(); i++) {
+                LinearLayout.LayoutParams params1 = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+                TextView tv = new TextView(getApplicationContext());
+                ImageView imageView = new ImageView(getContext());
+                imageView.setImageResource(R.drawable.zip50);
+                tv.setId(i);
+                tv.setText(name.get(i));
+                tv.setTextColor(getResources().getColor(R.color.colorPrimary));
+                layout.addView(imageView, params1);
+                layout.addView(tv, params1);
+            }
+            return v;
+        }
+
+
     }
 }
