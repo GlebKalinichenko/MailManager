@@ -1,9 +1,10 @@
-package com.example.gleb.mailmanager;
+package com.example.gleb.mailmanager.activities;
 
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Bundle;
+import android.os.Environment;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActionBarDrawerToggle;
@@ -24,13 +25,14 @@ import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
 
-import com.example.gleb.mailmanager.filedialog.FileChooserActivity;
+import com.example.gleb.mailmanager.R;
 import com.example.gleb.mailmanager.images.RoundImage;
 import com.example.gleb.mailmanager.navigationdrawer.NavDrawerItem;
 import com.example.gleb.mailmanager.navigationdrawer.NavDrawerListAdapter;
 import com.example.gleb.mailmanager.viewpager.ProfileViewPagerAdapter;
 import com.example.gleb.mailmanager.sliding.SlidingTabLayout;
 
+import java.io.File;
 import java.util.ArrayList;
 
 public class MailManager extends PatternActivity {
@@ -77,6 +79,7 @@ public class MailManager extends PatternActivity {
         });
 
         initializeValues();
+        createBaseFolder();
 
         mTitle = mDrawerTitle = getTitle();
         // load slide menu items
@@ -92,6 +95,7 @@ public class MailManager extends PatternActivity {
         navDrawerItems.add(new NavDrawerItem(navMenuTitles[2], navMenuIcons.getResourceId(2, -1), true, String.valueOf(draftMail)));
         navDrawerItems.add(new NavDrawerItem(navMenuTitles[3], navMenuIcons.getResourceId(3, -1), true, String.valueOf(deletedMail)));
         navDrawerItems.add(new NavDrawerItem(navMenuTitles[4], navMenuIcons.getResourceId(4, -1)));
+        navDrawerItems.add(new NavDrawerItem(navMenuTitles[5], navMenuIcons.getResourceId(5, -1)));
         navMenuIcons.recycle();
         // setting the nav drawer list adapter
         adapter = new NavDrawerListAdapter(getApplicationContext(), navDrawerItems);
@@ -136,7 +140,8 @@ public class MailManager extends PatternActivity {
         };
         mDrawerLayout.setDrawerListener(mDrawerToggle);
 
-        viewadapter =  new ProfileViewPagerAdapter(getSupportFragmentManager(), Titles, Numboftabs);
+        viewadapter =  new ProfileViewPagerAdapter(getSupportFragmentManager(), Titles, Numboftabs, email, password);
+
         // Assigning ViewPager View and setting the adapter
         pager = (ViewPager) findViewById(R.id.pager);
         pager.setAdapter(viewadapter);
@@ -175,7 +180,7 @@ public class MailManager extends PatternActivity {
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.menu_mail_magaer, menu);
+        getMenuInflater().inflate(R.menu.menu_mail, menu);
         return true;
     }
 
@@ -188,6 +193,8 @@ public class MailManager extends PatternActivity {
 
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
+            delete(new File(Environment.getExternalStorageDirectory(), email));
+            finish();
             return true;
         }
 
@@ -207,6 +214,40 @@ public class MailManager extends PatternActivity {
                 startActivity(intent);
                 break;
         }
+    }
+
+    public void createBaseFolder(){
+        createDirIfNotExists(String.valueOf(Environment.getExternalStorageDirectory()), email);
+        createDirIfNotExists(String.valueOf(Environment.getExternalStorageDirectory() + "/" + email), "Inbox");
+        createDirIfNotExists(String.valueOf(Environment.getExternalStorageDirectory() + "/" + email), "Outbox");
+        createDirIfNotExists(String.valueOf(Environment.getExternalStorageDirectory() + "/" + email), "Trash");
+        createDirIfNotExists(String.valueOf(Environment.getExternalStorageDirectory() + "/" + email), "Draft");
+
+    }
+
+    public static boolean createDirIfNotExists(String path, String name) {
+        boolean ret = true;
+        File file = new File(path, name);
+        if (!file.exists()) {
+            if (!file.mkdirs()) {
+                Log.e("TravellerLog :: ", "Problem creating Image folder");
+                ret = false;
+            }
+        }
+        return ret;
+    }
+
+    @Override
+    public void onBackPressed() {
+        super.onBackPressed();
+        delete(new File(Environment.getExternalStorageDirectory(), email));
+    }
+
+    boolean delete(File file) {
+        File[] files = file.listFiles();
+        if (files != null)
+            for (File f : files) delete(f);
+        return file.delete();
     }
 
 //    private class DrawerItemClickListener implements ListView.OnItemClickListener {
