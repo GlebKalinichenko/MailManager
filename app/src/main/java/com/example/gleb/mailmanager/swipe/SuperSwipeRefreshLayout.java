@@ -1,4 +1,4 @@
-package com.example.gleb.mailmanager;
+package com.example.gleb.mailmanager.swipe;
 
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
