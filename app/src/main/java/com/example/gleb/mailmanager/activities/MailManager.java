@@ -249,21 +249,4 @@ public class MailManager extends PatternActivity {
             for (File f : files) delete(f);
         return file.delete();
     }
-
-//    private class DrawerItemClickListener implements ListView.OnItemClickListener {
-//        @Override
-//        public void onItemClick(AdapterView parent, View view, int position,long id) {
-//            mDrawerList.setItemChecked(position, true);
-//            Log.d(TAG, "Value" + position);
-//            switch (position){
-//                case 5:
-//                    Intent intent = new Intent(MailManager.this, SenderMail.class);
-//                    intent.putExtra(SenderMail.EMAIL, email);
-//                    intent.putExtra(SenderMail.PASSWORD, password);
-//                    startActivity(intent);
-//                    break;
-//            }
-//
-//        }
-//    }
 }
