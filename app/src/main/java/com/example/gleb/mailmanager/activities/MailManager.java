@@ -219,9 +219,9 @@ public class MailManager extends PatternActivity {
     public void createBaseFolder(){
         createDirIfNotExists(String.valueOf(Environment.getExternalStorageDirectory()), email);
         createDirIfNotExists(String.valueOf(Environment.getExternalStorageDirectory() + "/" + email), "Inbox");
-        createDirIfNotExists(String.valueOf(Environment.getExternalStorageDirectory() + "/" + email), "Outbox");
-        createDirIfNotExists(String.valueOf(Environment.getExternalStorageDirectory() + "/" + email), "Trash");
-        createDirIfNotExists(String.valueOf(Environment.getExternalStorageDirectory() + "/" + email), "Draft");
+        createDirIfNotExists(String.valueOf(Environment.getExternalStorageDirectory() + "/" + email), "Отправленные");
+        createDirIfNotExists(String.valueOf(Environment.getExternalStorageDirectory() + "/" + email), "Удаленные");
+        createDirIfNotExists(String.valueOf(Environment.getExternalStorageDirectory() + "/" + email), "Черновики");
 
     }
 
