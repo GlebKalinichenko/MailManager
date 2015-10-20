@@ -1,4 +1,4 @@
-package com.example.gleb.mailmanager;
+package com.example.gleb.mailmanager.recyclerview;
 
 import android.content.Context;
 import android.support.v7.app.ActionBarActivity;
