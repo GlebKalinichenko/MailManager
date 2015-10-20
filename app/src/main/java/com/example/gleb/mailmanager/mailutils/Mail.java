@@ -1,8 +1,9 @@
-package com.example.gleb.mailmanager;
+package com.example.gleb.mailmanager.mailutils;
 
 import android.os.AsyncTask;
 import android.util.Log;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.Properties;
 
@@ -148,13 +149,15 @@ public class Mail extends javax.mail.Authenticator {
     }
 
 
-    public void addAttachment(String filename) throws Exception {
-        BodyPart messageBodyPart = new MimeBodyPart();
-        DataSource source = new FileDataSource(filename);
-        messageBodyPart.setDataHandler(new DataHandler(source));
-        messageBodyPart.setFileName(filename);
+    public void addAttachment(ArrayList<String> filename) throws Exception {
+        for (int i = 0; i < filename.size(); i++) {
+            BodyPart messageBodyPart = new MimeBodyPart();
+            DataSource source = new FileDataSource(filename.get(i));
+            messageBodyPart.setDataHandler(new DataHandler(source));
+            messageBodyPart.setFileName(filename.get(i));
 
-        multipart.addBodyPart(messageBodyPart);
+            multipart.addBodyPart(messageBodyPart);
+        }
     }
 
     @Override
