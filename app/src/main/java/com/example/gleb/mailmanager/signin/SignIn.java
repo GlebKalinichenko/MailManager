@@ -9,7 +9,7 @@ import android.view.View;
 import android.widget.EditText;
 import android.widget.Toast;
 
-import com.example.gleb.mailmanager.MailManager;
+import com.example.gleb.mailmanager.activities.MailManager;
 import com.example.gleb.mailmanager.R;
 
 import java.util.Properties;
