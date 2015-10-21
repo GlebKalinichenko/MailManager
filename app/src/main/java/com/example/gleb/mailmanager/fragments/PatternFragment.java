@@ -50,6 +50,7 @@ abstract class PatternFragment extends Fragment {
     protected List<String> arraySubject;
     protected List<String> arrayContent;
     protected List<String> arrayDateMail;
+    protected List<String> arrayAttachFiles;
     protected String email;
     protected String password;
 
@@ -160,7 +161,130 @@ abstract class PatternFragment extends Fragment {
     }
 
     /*
-    * Class for async query for server for mails
+    * Class for async query read mails from root directory
+    * */
+    public class Reader extends AsyncTask<String, String, String[]> {
+        public String typeMail;
+        public Context context;
+
+        public Reader(String typeMail, Context context) {
+            this.typeMail = typeMail;
+            this.context = context;
+        }
+
+        @Override
+        protected String[] doInBackground(String... params) {
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(String[] value) {
+            mailStructures = new ArrayList<>();
+            mailStructures = readMail(email, typeMail);
+            RVAdapter adapter = new RVAdapter(mailStructures, context);
+            adapter.notifyDataSetChanged();
+            rv.setAdapter(adapter);
+        }
+    }
+
+    protected static boolean createDirIfNotExists(String path, String name) {
+        boolean ret = true;
+        File file = new File(path, name);
+        if (!file.exists()) {
+            if (!file.mkdirs()) {
+                Log.e("TravellerLog :: ", "Problem creating Image folder");
+                ret = false;
+            }
+        }
+        return ret;
+    }
+
+    /*
+    * Delete all files in current directory
+    * @param File file        Directory for deleted
+    * @return boolean         Is directory deleted
+    * */
+    protected boolean delete(File file) {
+        File[] files = file.listFiles();
+        if (files != null)
+            for (File f : files) delete(f);
+        return file.delete();
+    }
+
+    /*
+    * Delete directories from root directory for update mail
+    * */
+    protected void deleteInRootDirectory(){
+        delete(new File(Environment.getExternalStorageDirectory() + "/" + email, "Inbox"));
+        delete(new File(Environment.getExternalStorageDirectory() + "/" + email, "Отправленные"));
+        delete(new File(Environment.getExternalStorageDirectory() + "/" + email, "Удаленные"));
+        delete(new File(Environment.getExternalStorageDirectory() + "/" + email, "Черновики"));
+    }
+
+    /*
+    * Create again directroty that would be deleted after update mail
+    * */
+    protected void createInRootDirectory(){
+        createDirIfNotExists(String.valueOf(Environment.getExternalStorageDirectory() + "/" + email), "Inbox");
+        createDirIfNotExists(String.valueOf(Environment.getExternalStorageDirectory() + "/" + email), "Отправленные");
+        createDirIfNotExists(String.valueOf(Environment.getExternalStorageDirectory() + "/" + email), "Удаленные");
+        createDirIfNotExists(String.valueOf(Environment.getExternalStorageDirectory() + "/" + email), "Черновики");
+    }
+
+    /*
+    * Update all mails at first delete all directiry in mail box and load then again
+    * */
+    protected void updateMail(){
+        //clear files in root directory
+        deleteInRootDirectory();
+        //create directories in root directory
+        createInRootDirectory();
+
+        String host = email.substring(email.lastIndexOf("@") + 1);
+        Log.d(TAG, "Host email " + host);
+        switch (host){
+            case "yandex.ru":
+                new Loader("imap.yandex.ru", email, password, "INBOX", getContext()).execute();
+                new Loader("imap.yandex.ru", email, password, "Отправленные", getContext()).execute();
+                new Loader("imap.yandex.ru", email, password, "Удаленные", getContext()).execute();
+                new Loader("imap.yandex.ru", email, password, "Черновики", getContext()).execute();
+                break;
+
+            case "yandex.ua":
+                new Loader("imap.yandex.ru", email, password, "INBOX", getContext()).execute();
+                new Loader("imap.yandex.ru", email, password, "Отправленные", getContext()).execute();
+                new Loader("imap.yandex.ru", email, password, "Удаленные", getContext()).execute();
+                new Loader("imap.yandex.ru", email, password, "Черновики", getContext()).execute();
+                break;
+
+            case "gmail.com":
+                new Loader("imap.googlemail.com", email, password, "INBOX", getContext()).execute();
+                new Loader("imap.googlemail.com", email, password, "Отправленные", getContext()).execute();
+                new Loader("imap.googlemail.com", email, password, "Отправленные", getContext()).execute();
+                new Loader("imap.googlemail.com", email, password, "Удаленные", getContext()).execute();
+                new Loader("imap.googlemail.com", email, password, "Черновики", getContext()).execute();
+                break;
+
+            case "ukr.net":
+                new Loader("imap.ukr.net", email, password, "INBOX", getContext()).execute();
+                new Loader("imap.ukr.net", email, password, "Отправленные", getContext()).execute();
+                new Loader("imap.ukr.net", email, password, "Отправленные", getContext()).execute();
+                new Loader("imap.ukr.net", email, password, "Удаленные", getContext()).execute();
+                new Loader("imap.ukr.net", email, password, "Черновики", getContext()).execute();
+                break;
+
+            case "rambler.ru":
+                new Loader("imap.rambler.ru", email, password, "INBOX", getContext()).execute();
+                new Loader("imap.rambler.ru", email, password, "Отправленные", getContext()).execute();
+                new Loader("imap.rambler.ru", email, password, "Отправленные", getContext()).execute();
+                new Loader("imap.rambler.ru", email, password, "Удаленные", getContext()).execute();
+                new Loader("imap.rambler.ru", email, password, "Черновики", getContext()).execute();
+                break;
+        }
+    }
+
+    /*
+    * Class for async query load mails from server and write to root directory
     * */
     public class Loader extends AsyncTask<String, String, String[]> {
         public String imapHost;
@@ -262,12 +386,35 @@ abstract class PatternFragment extends Fragment {
 
         @Override
         protected void onPostExecute(String[] value) {
-            mailStructures = new ArrayList<>();
-            mailStructures = readMail(email, typeMail);
-            RVAdapter adapter = new RVAdapter(mailStructures, context);
-            rv.setAdapter(adapter);
+
         }
     }
 
+    protected void contentEmail(String folder){
+        String host = email.substring(email.lastIndexOf("@") + 1);
+        Log.d(TAG, "Host email " + host);
+        switch (host){
+            case "yandex.ru":
+                new Reader(folder, getContext()).execute();
+                break;
+
+            case "yandex.ua":
+                new Reader(folder, getContext()).execute();
+                break;
+
+            case "gmail.com":
+                new Reader(folder, getContext()).execute();
+                break;
+
+            case "ukr.net":
+                new Reader(folder, getContext()).execute();
+                break;
+
+            case "rambler.ru":
+                new Reader(folder, getContext()).execute();
+                break;
+        }
+
+    }
 
 }
