@@ -36,10 +36,6 @@ public class TrashFragment extends PatternFragment {
         rv.setLayoutManager(llm);
         rv.setHasFixedSize(true);
 
-//        initializeData();
-//        RVAdapter adapter = new RVAdapter(mailStructures);
-//        rv.setAdapter(adapter);
-
         rv.addOnItemTouchListener(
                 new ItemRecycler.RecyclerItemClickListener(getActivity(), new ItemRecycler.RecyclerItemClickListener.OnItemClickListener() {
                     @Override
@@ -72,7 +68,8 @@ public class TrashFragment extends PatternFragment {
                                 progressBar.setVisibility(View.GONE);
                             }
                         }, 2000);
-
+                        updateMail();
+                        contentEmail("Удаленные");
                     }
 
                     @Override
@@ -87,29 +84,7 @@ public class TrashFragment extends PatternFragment {
                     }
                 });
 
-        String host = email.substring(email.lastIndexOf("@") + 1);
-        Log.d(TAG, "Host email " + host);
-        switch (host){
-            case "yandex.ru":
-                new Loader("imap.yandex.ru", email, password, "Удаленные", getContext()).execute();
-                break;
-
-            case "yandex.ua":
-                new Loader("imap.yandex.ru", email, password, "Удаленные", getContext()).execute();
-                break;
-
-            case "gmail.com":
-                new Loader("imap.googlemail.com", email, password, "Удаленные", getContext()).execute();
-                break;
-
-            case "ukr.net":
-                new Loader("imap.ukr.net", email, password, "Удаленные", getContext()).execute();
-                break;
-
-            case "rambler.ru":
-                new Loader("imap.rambler.ru", email, password, "Удаленные", getContext()).execute();
-                break;
-        }
+        contentEmail("Удаленные");
 
         return v;
     }
