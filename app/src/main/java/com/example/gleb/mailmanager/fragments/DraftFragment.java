@@ -68,7 +68,8 @@ public class DraftFragment extends PatternFragment {
                                 progressBar.setVisibility(View.GONE);
                             }
                         }, 2000);
-
+                        updateMail();
+                        contentEmail("Черновики");
                     }
 
                     @Override
@@ -83,29 +84,7 @@ public class DraftFragment extends PatternFragment {
                     }
                 });
 
-        String host = email.substring(email.lastIndexOf("@") + 1);
-        Log.d(TAG, "Host email " + host);
-        switch (host){
-            case "yandex.ru":
-                new Loader("imap.yandex.ru", email, password, "Черновики", getContext()).execute();
-                break;
-
-            case "yandex.ua":
-                new Loader("imap.yandex.ru", email, password, "Черновики", getContext()).execute();
-                break;
-
-            case "gmail.com":
-                new Loader("imap.googlemail.com", email, password, "Черновики", getContext()).execute();
-                break;
-
-            case "ukr.net":
-                new Loader("imap.ukr.net", email, password, "Черновики", getContext()).execute();
-                break;
-
-            case "rambler.ru":
-                new Loader("imap.rambler.ru", email, password, "Черновики", getContext()).execute();
-                break;
-        }
+        contentEmail("Черновики");
 
         return v;
     }
