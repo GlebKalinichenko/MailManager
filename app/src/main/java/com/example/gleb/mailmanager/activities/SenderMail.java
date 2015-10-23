@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Bundle;
+import android.os.Environment;
 import android.support.annotation.Nullable;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.ActionBarDrawerToggle;
@@ -184,6 +185,12 @@ public class SenderMail extends PatternActivity {
     @Override
     public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
 
+    }
+
+    @Override
+    public void onBackPressed() {
+        super.onBackPressed();
+        delete(new File(Environment.getExternalStorageDirectory(), email));
     }
 
     @Override

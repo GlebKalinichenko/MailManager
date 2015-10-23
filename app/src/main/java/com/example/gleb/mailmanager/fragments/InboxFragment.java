@@ -1,12 +1,10 @@
 package com.example.gleb.mailmanager.fragments;
 
 
-import android.os.AsyncTask;
+import android.content.Intent;
 import android.os.Bundle;
-import android.os.Environment;
 import android.os.Handler;
 import android.support.annotation.Nullable;
-import android.support.v4.app.Fragment;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
@@ -16,32 +14,10 @@ import android.view.ViewGroup;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
+import com.example.gleb.mailmanager.activities.ItemMail;
 import com.example.gleb.mailmanager.recyclerview.ItemRecycler;
 import com.example.gleb.mailmanager.R;
-import com.example.gleb.mailmanager.recyclerview.RVAdapter;
 import com.example.gleb.mailmanager.swipe.SuperSwipeRefreshLayout;
-import com.example.gleb.mailmanager.basics.MailStructure;
-
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Properties;
-
-import javax.mail.Address;
-import javax.mail.BodyPart;
-import javax.mail.Flags;
-import javax.mail.Folder;
-import javax.mail.Message;
-import javax.mail.Multipart;
-import javax.mail.Session;
-import javax.mail.Store;
-import javax.mail.search.FlagTerm;
 
 /**
  * Created by Gleb on 18.10.2015.
@@ -63,15 +39,16 @@ public class InboxFragment extends PatternFragment {
         rv.setLayoutManager(llm);
         rv.setHasFixedSize(true);
 
-//        initializeData();
-//        RVAdapter adapter = new RVAdapter(mailStructures);
-//        rv.setAdapter(adapter);
-
         rv.addOnItemTouchListener(
                 new ItemRecycler.RecyclerItemClickListener(getActivity(), new ItemRecycler.RecyclerItemClickListener.OnItemClickListener() {
                     @Override
                     public void onItemClick(View view, int position) {
                         Log.d(TAG, "Value" + position);
+                        Intent intent = new Intent(getContext(), ItemMail.class);
+                        intent.putExtra(ItemMail.MAIL, mailStructures.get(position));
+                        intent.putExtra(ItemMail.EMAIL, email);
+                        intent.putExtra(ItemMail.PASSWORD, password);
+                        startActivity(intent);
                     }
 
                     @Override
@@ -99,7 +76,8 @@ public class InboxFragment extends PatternFragment {
                                 progressBar.setVisibility(View.GONE);
                             }
                         }, 2000);
-
+                        updateMail();
+                        readMailFromStore("INBOX");
                     }
 
                     @Override
@@ -113,30 +91,8 @@ public class InboxFragment extends PatternFragment {
 //                        imageView.setRotation(enable ? 180 : 0);
                     }
                 });
-
-        String host = email.substring(email.lastIndexOf("@") + 1);
-        Log.d(TAG, "Host email " + host);
-        switch (host){
-            case "yandex.ru":
-                new Loader("imap.yandex.ru", email, password, "INBOX", getContext()).execute();
-            break;
-
-            case "yandex.ua":
-                new Loader("imap.yandex.ru", email, password, "INBOX", getContext()).execute();
-            break;
-
-            case "gmail.com":
-                new Loader("imap.googlemail.com", email, password, "INBOX", getContext()).execute();
-            break;
-
-            case "ukr.net":
-                new Loader("imap.ukr.net", email, password, "INBOX", getContext()).execute();
-            break;
-
-            case "rambler.ru":
-                new Loader("imap.rambler.ru", email, password, "INBOX", getContext()).execute();
-            break;
-        }
+            //begin to read mails from root directory + directory "Inbox"
+            readMailFromStore("INBOX");
 
         return v;
     }

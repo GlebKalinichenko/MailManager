@@ -1,5 +1,6 @@
 package com.example.gleb.mailmanager.fragments;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.annotation.Nullable;
@@ -13,6 +14,7 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import com.example.gleb.mailmanager.R;
+import com.example.gleb.mailmanager.activities.ItemMail;
 import com.example.gleb.mailmanager.recyclerview.ItemRecycler;
 import com.example.gleb.mailmanager.swipe.SuperSwipeRefreshLayout;
 
@@ -36,15 +38,16 @@ public class OutboxFragment extends PatternFragment {
         rv.setLayoutManager(llm);
         rv.setHasFixedSize(true);
 
-//        initializeData();
-//        RVAdapter adapter = new RVAdapter(mailStructures);
-//        rv.setAdapter(adapter);
-
         rv.addOnItemTouchListener(
                 new ItemRecycler.RecyclerItemClickListener(getActivity(), new ItemRecycler.RecyclerItemClickListener.OnItemClickListener() {
                     @Override
                     public void onItemClick(View view, int position) {
                         Log.d(TAG, "Value" + position);
+                        Intent intent = new Intent(getContext(), ItemMail.class);
+                        intent.putExtra(ItemMail.MAIL, mailStructures.get(position));
+                        intent.putExtra(ItemMail.EMAIL, email);
+                        intent.putExtra(ItemMail.PASSWORD, password);
+                        startActivity(intent);
                     }
 
                     @Override
@@ -72,7 +75,8 @@ public class OutboxFragment extends PatternFragment {
                                 progressBar.setVisibility(View.GONE);
                             }
                         }, 2000);
-
+                        updateMail();
+                        readMailFromStore("Отправленные");
                     }
 
                     @Override
@@ -87,29 +91,7 @@ public class OutboxFragment extends PatternFragment {
                     }
                 });
 
-        String host = email.substring(email.lastIndexOf("@") + 1);
-        Log.d(TAG, "Host email " + host);
-        switch (host){
-            case "yandex.ru":
-                new Loader("imap.yandex.ru", email, password, "Отправленные", getContext()).execute();
-                break;
-
-            case "yandex.ua":
-                new Loader("imap.yandex.ru", email, password, "Отправленные", getContext()).execute();
-                break;
-
-            case "gmail.com":
-                new Loader("imap.googlemail.com", email, password, "Отправленные", getContext()).execute();
-                break;
-
-            case "ukr.net":
-                new Loader("imap.ukr.net", email, password, "Отправленные", getContext()).execute();
-                break;
-
-            case "rambler.ru":
-                new Loader("imap.rambler.ru", email, password, "Отправленные", getContext()).execute();
-                break;
-        }
+        readMailFromStore("Отправленные");
 
         return v;
     }

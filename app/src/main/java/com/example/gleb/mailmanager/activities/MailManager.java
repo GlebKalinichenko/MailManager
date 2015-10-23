@@ -1,8 +1,10 @@
 package com.example.gleb.mailmanager.activities;
 
+import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Environment;
 import android.support.design.widget.FloatingActionButton;
@@ -29,11 +31,32 @@ import com.example.gleb.mailmanager.R;
 import com.example.gleb.mailmanager.images.RoundImage;
 import com.example.gleb.mailmanager.navigationdrawer.NavDrawerItem;
 import com.example.gleb.mailmanager.navigationdrawer.NavDrawerListAdapter;
+import com.example.gleb.mailmanager.recyclerview.RVAdapter;
 import com.example.gleb.mailmanager.viewpager.ProfileViewPagerAdapter;
 import com.example.gleb.mailmanager.sliding.SlidingTabLayout;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.List;
+import java.util.Properties;
+
+import javax.mail.Address;
+import javax.mail.BodyPart;
+import javax.mail.Flags;
+import javax.mail.Folder;
+import javax.mail.Message;
+import javax.mail.Multipart;
+import javax.mail.Part;
+import javax.mail.Session;
+import javax.mail.Store;
+import javax.mail.internet.MimeUtility;
+import javax.mail.search.FlagTerm;
 
 public class MailManager extends PatternActivity {
     public static final String TAG = "Tag";
@@ -53,7 +76,6 @@ public class MailManager extends PatternActivity {
     private int outBoxMail;
     private int draftMail;
     private int Numboftabs = 4;
-    private Toolbar toolbar;
     private ViewPager pager;
     private SlidingTabLayout tabs;
     private ActionMode actionMode;
@@ -61,6 +83,11 @@ public class MailManager extends PatternActivity {
     private CharSequence[] Titles = {
             "Входящие", "Отправленные", "Черновики", "Удаленные"
     };
+    private List<String> arrayFrom;
+    private List<String> arrayEmail;
+    private List<String> arraySubject;
+    private List<String> arrayContent;
+    private List<String> arrayDateMail;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -89,6 +116,7 @@ public class MailManager extends PatternActivity {
         mDrawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
         mDrawerList = (ListView) findViewById(R.id.list_slidermenu);
 
+        //initialize navigation drawer
         navDrawerItems = new ArrayList<NavDrawerItem>();
         navDrawerItems.add(new NavDrawerItem(navMenuTitles[0], navMenuIcons.getResourceId(0, -1), true, String.valueOf(newInboxMail)));
         navDrawerItems.add(new NavDrawerItem(navMenuTitles[1], navMenuIcons.getResourceId(1, -1), true, String.valueOf(outBoxMail)));
@@ -160,6 +188,48 @@ public class MailManager extends PatternActivity {
 
         // Setting the ViewPager For the SlidingTabsLayout
         tabs.setViewPager(pager);
+
+        String host = email.substring(email.lastIndexOf("@") + 1);
+        Log.d(TAG, "Host email " + host);
+        switch (host){
+            case "yandex.ru":
+                new Loader("imap.yandex.ru", email, password, "INBOX", this).execute();
+                new Loader("imap.yandex.ru", email, password, "Отправленные", this).execute();
+                new Loader("imap.yandex.ru", email, password, "Удаленные", this).execute();
+                new Loader("imap.yandex.ru", email, password, "Черновики", this).execute();
+                break;
+
+            case "yandex.ua":
+                new Loader("imap.yandex.ru", email, password, "INBOX", this).execute();
+                new Loader("imap.yandex.ru", email, password, "Отправленные", this).execute();
+                new Loader("imap.yandex.ru", email, password, "Удаленные", this).execute();
+                new Loader("imap.yandex.ru", email, password, "Черновики", this).execute();
+                break;
+
+            case "gmail.com":
+                new Loader("imap.googlemail.com", email, password, "INBOX", this).execute();
+                new Loader("imap.googlemail.com", email, password, "Отправленные", this).execute();
+                new Loader("imap.googlemail.com", email, password, "Отправленные", this).execute();
+                new Loader("imap.googlemail.com", email, password, "Удаленные", this).execute();
+                new Loader("imap.googlemail.com", email, password, "Черновики", this).execute();
+                break;
+
+            case "ukr.net":
+                new Loader("imap.ukr.net", email, password, "INBOX", this).execute();
+                new Loader("imap.ukr.net", email, password, "Отправленные", this).execute();
+                new Loader("imap.ukr.net", email, password, "Отправленные", this).execute();
+                new Loader("imap.ukr.net", email, password, "Удаленные", this).execute();
+                new Loader("imap.ukr.net", email, password, "Черновики", this).execute();
+                break;
+
+            case "rambler.ru":
+                new Loader("imap.rambler.ru", email, password, "INBOX", this).execute();
+                new Loader("imap.rambler.ru", email, password, "Отправленные", this).execute();
+                new Loader("imap.rambler.ru", email, password, "Отправленные", this).execute();
+                new Loader("imap.rambler.ru", email, password, "Удаленные", this).execute();
+                new Loader("imap.rambler.ru", email, password, "Черновики", this).execute();
+                break;
+        }
     }
 
     /*
@@ -222,6 +292,7 @@ public class MailManager extends PatternActivity {
         createDirIfNotExists(String.valueOf(Environment.getExternalStorageDirectory() + "/" + email), "Отправленные");
         createDirIfNotExists(String.valueOf(Environment.getExternalStorageDirectory() + "/" + email), "Удаленные");
         createDirIfNotExists(String.valueOf(Environment.getExternalStorageDirectory() + "/" + email), "Черновики");
+        createDirIfNotExists(String.valueOf(Environment.getExternalStorageDirectory() + "/" + email), "Attach");
 
     }
 
@@ -243,10 +314,143 @@ public class MailManager extends PatternActivity {
         delete(new File(Environment.getExternalStorageDirectory(), email));
     }
 
-    boolean delete(File file) {
-        File[] files = file.listFiles();
-        if (files != null)
-            for (File f : files) delete(f);
-        return file.delete();
+    /*
+    * Class for async query load mails from server and write to root directory
+    * */
+    public class Loader extends AsyncTask<String, String, String[]> {
+        public String imapHost;
+        public String user;
+        public String password;
+        public String typeMail;
+        public Context context;
+
+        public Loader(String imapHost, String user, String password, String typeMail, Context context) {
+            this.imapHost = imapHost;
+            this.user = user;
+            this.password = password;
+            this.typeMail = typeMail;
+            this.context = context;
+        }
+
+        @Override
+        protected String[] doInBackground(String... params) {
+            Properties props = new Properties();
+            props.put("mail.imap.port", 993);
+            props.put("mail.imap.socketFactory.port", 993);
+            props.put("mail.imap.socketFactory.class", "javax.net.ssl.SSLSocketFactory");
+            props.put("mail.imap.socketFactory.fallback", "false");
+            props.setProperty("mail.store.protocol", "imaps");
+
+            try {
+                Session session = Session.getInstance(props, null);
+                Store store = session.getStore();
+                store.connect(imapHost, email, password);
+                Folder folderBox = store.getFolder(typeMail);
+                folderBox.open(Folder.READ_ONLY);
+                int newMail = folderBox.getNewMessageCount();
+                int allMail = folderBox.getMessageCount();
+                Log.d(TAG, "New mail " + newMail);
+                Log.d(TAG, "All mail " + allMail);
+
+                FlagTerm ft = new FlagTerm(new Flags(Flags.Flag.USER), false);
+                Message[] messages = folderBox.search(ft);
+                Log.d(TAG, "Новые сообщения " + messages.length);
+
+                for (Folder folder : store.getDefaultFolder().list("*")) {
+                    Log.d(TAG, "Новые сообщения " + folder.getFullName());
+                }
+                arrayFrom = new ArrayList<>();
+                arrayEmail = new ArrayList<>();
+                arraySubject = new ArrayList<>();
+                arrayContent = new ArrayList<>();
+                arrayDateMail = new ArrayList<>();
+
+                for (int i = 0; i < messages.length; i++) {
+                    Address[] in = messages[i].getFrom();
+                    for (Address address : in) {
+                        String decodeAddress = MimeUtility.decodeText(address.toString());
+                        System.out.println("FROM:" + address.toString());
+                        //add email of sender of mail
+                        String emailValue = decodeAddress.substring(decodeAddress.indexOf("<"), decodeAddress.indexOf(">") + 1);
+                        arrayEmail.add(emailValue);
+                        //add name of sender of mail;
+                        String nameValue = decodeAddress.substring(0, decodeAddress.indexOf("<"));
+                        arrayFrom.add(nameValue);
+                    }
+
+                    Object content = messages[i].getContent();
+                    String[] parts = messages[i].getSentDate().toString().split(" ");
+
+                    //mail content only string values or mail content images with different string values
+                    if (content instanceof String) {
+                        String body = (String) content;
+                        Log.d(TAG, "SENT DATE String: " + messages[i].getSentDate());
+                        //add date of mail
+                        arrayDateMail.add(String.valueOf(messages[i].getSentDate().getDate()) + "." + (messages[i].getSentDate().getMonth() + 1) + "."
+                                + (messages[i].getSentDate().getYear() % 100) + "-" + parts[3]);
+                        //add subject of mail
+                        arraySubject.add(messages[i].getSubject());
+                        Log.d(TAG, "SUBJECT String: " + messages[i].getSubject());
+                        arrayContent.add(body);
+                        Log.d(TAG, "Content String " + body);
+                        createMail(arraySubject.get(i), arrayFrom.get(i), arrayEmail.get(i), arrayContent.get(i), arrayDateMail.get(i), typeMail, email, new ArrayList<String>());
+                    } else if (content instanceof Multipart) {
+                        Multipart mp = (Multipart) content;
+                        BodyPart bp = mp.getBodyPart(0);
+                        arrayDateMail.add(String.valueOf(messages[i].getSentDate().getDate()) + "." + (messages[i].getSentDate().getMonth() + 1) + "."
+                                + (messages[i].getSentDate().getYear() % 100) + "-" + parts[3]);
+                        Log.d(TAG, "SENT DATE Multipart: " + messages[i].getSentDate());
+                        arraySubject.add(messages[i].getSubject());
+                        Log.d(TAG, "SUBJECT Multipart: " + messages[i].getSubject());
+                        arrayContent.add(bp.getContent().toString());
+//                        createMail(arraySubject.get(i), arrayFrom.get(i), arrayEmail.get(i), arrayContent.get(i), arrayDateMail.get(i), typeMail, email);
+
+                        System.out.println("-------"+(i+1)+"-------");
+                        System.out.println(messages[i].getSentDate());
+                        Multipart multipart = (Multipart)messages[i].getContent();
+                        InputStream[] inputStreams = new InputStream[multipart.getCount()];
+                        List<String> arrayPathAttachFiles = new ArrayList<>();
+
+                        for(int j = 0; j < multipart.getCount(); j++) {
+                            BodyPart bodyPart = multipart.getBodyPart(j);
+                            Log.d(TAG, "bodyPart " + bodyPart.getFileName());
+                            Log.d(TAG, "BodyPart " + bodyPart);
+                            if (Part.ATTACHMENT.equalsIgnoreCase(bodyPart.getDisposition())) {
+                                System.out.println("Creating file with name without : " + bodyPart.getFileName());
+                                arrayPathAttachFiles.add(Environment.getExternalStorageDirectory().getAbsolutePath() + "/" + email + "/" + "Attach" + "/" + bodyPart.getFileName());
+                                File f = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + "/" + email + "/" + "Attach" + "/", bodyPart.getFileName());
+//                                File f = new File(Environment.getExternalStorageDirectory().getAbsolutePath(), bodyPart.getFileName());
+                                InputStream is = bodyPart.getInputStream();
+                                FileOutputStream fos = null;
+                                try {
+                                    fos = new FileOutputStream(f);
+                                    byte[] buf = new byte[4096];
+                                    int bytesRead;
+                                    while ((bytesRead = is.read(buf)) != -1) {
+                                        fos.write(buf, 0, bytesRead);
+                                    }
+                                    fos.close();
+                                } catch (FileNotFoundException e) {
+                                    e.printStackTrace();
+                                }
+                            }
+
+                        }
+                        createMail(arraySubject.get(i), arrayFrom.get(i), arrayEmail.get(i), arrayContent.get(i), arrayDateMail.get(i), typeMail, email, arrayPathAttachFiles);
+
+                    }
+                }
+
+            } catch (Exception mex) {
+                mex.printStackTrace();
+            }
+
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(String[] value) {
+
+        }
     }
 }

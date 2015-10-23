@@ -1,5 +1,6 @@
 package com.example.gleb.mailmanager.fragments;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.annotation.Nullable;
@@ -13,6 +14,7 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import com.example.gleb.mailmanager.R;
+import com.example.gleb.mailmanager.activities.ItemMail;
 import com.example.gleb.mailmanager.recyclerview.ItemRecycler;
 import com.example.gleb.mailmanager.swipe.SuperSwipeRefreshLayout;
 
@@ -41,6 +43,11 @@ public class TrashFragment extends PatternFragment {
                     @Override
                     public void onItemClick(View view, int position) {
                         Log.d(TAG, "Value" + position);
+                        Intent intent = new Intent(getContext(), ItemMail.class);
+                        intent.putExtra(ItemMail.MAIL, mailStructures.get(position));
+                        intent.putExtra(ItemMail.EMAIL, email);
+                        intent.putExtra(ItemMail.PASSWORD, password);
+                        startActivity(intent);
                     }
 
                     @Override
@@ -69,7 +76,7 @@ public class TrashFragment extends PatternFragment {
                             }
                         }, 2000);
                         updateMail();
-                        contentEmail("Удаленные");
+                        readMailFromStore("Удаленные");
                     }
 
                     @Override
@@ -84,7 +91,7 @@ public class TrashFragment extends PatternFragment {
                     }
                 });
 
-        contentEmail("Удаленные");
+        readMailFromStore("Удаленные");
 
         return v;
     }

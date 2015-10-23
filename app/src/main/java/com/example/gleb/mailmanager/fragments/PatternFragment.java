@@ -16,6 +16,8 @@ import com.example.gleb.mailmanager.swipe.SuperSwipeRefreshLayout;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
@@ -30,6 +32,7 @@ import javax.mail.Flags;
 import javax.mail.Folder;
 import javax.mail.Message;
 import javax.mail.Multipart;
+import javax.mail.Part;
 import javax.mail.Session;
 import javax.mail.Store;
 import javax.mail.internet.MimeUtility;
@@ -55,14 +58,18 @@ abstract class PatternFragment extends Fragment {
     protected String password;
 
     /*
-    * Create mail file in user root directory for user
-    * @param String subject        Subject of mail
-    * @param String from           Name of sender of mail
-    * @param String emailMail      Email of sender of mail
-    * @param String date           Send date of mail
+    * Create file in root directory from data recieve from server
+    * @param String subject             Subject of mail
+    * @param String from                Name sender of mail
+    * @param String emailMail           Email sender of mail
+    * @param String content             Content of mail
+    * @param String date                Send date of mail
+    * @param String typeMail            Type mail receive from server f.e. inbox or outbox
+    * @param String rootDirectory       Name directory for accounted user that has value of email of mail
+    * @param List<String> attachFiles   List of path to attach files from subdirectory "Attach" in root directory
     * @return void
     * */
-    protected void createMail(String subject, String from, String emailMail, String content, String date, String typeMail, String rootDirectory){
+    protected void createMail(String subject, String from, String emailMail, String content, String date, String typeMail, String rootDirectory, List<String> attachFiles){
         if (subject == null){
             subject = "";
         }
@@ -80,6 +87,8 @@ abstract class PatternFragment extends Fragment {
             //add date of mail in file
             fileWriter.write(date);
             fileWriter.append("\n");
+            fileWriter.write(String.valueOf(attachFiles));
+            fileWriter.append("\n");
             //add subject of mail in file
             fileWriter.write(subject);
             fileWriter.append("\n");
@@ -93,18 +102,21 @@ abstract class PatternFragment extends Fragment {
     }
 
     /*
-    * Read mails from user root directory for user
-    * @param String email        Name user of root directory
-    * @return void
+    * Read mails from user root directory + typeMail
+    * @param String email              Name user of root directory
+    * @param String typeMail           Name of directory for read files of mail
+    * @return List<MailStructure>      List of mails load from files in root directory + typeMail
     * */
     protected List<MailStructure> readMail(String rootDirectory, String typeMail){
         String path = Environment.getExternalStorageDirectory().getAbsolutePath() + "/" + rootDirectory + "/" + typeMail + "/";
         Log.d("Files", "Path: " + path);
         File f = new File(path);
+
         File file[] = f.listFiles();
         String fromMail;
         String emailMail;
         String dateMail;
+        String[] attachFiles;
         String subjectMail;
         String contentMail;
         List<MailStructure> mails = new ArrayList<MailStructure>();
@@ -115,6 +127,7 @@ abstract class PatternFragment extends Fragment {
             subjectMail = "";
             contentMail = "";
             dateMail = "";
+            attachFiles = new String[]{};
             Log.d("Files", "FileName:" + file[i].getName());
             try {
                 InputStream instream = new FileInputStream(path + file[i].getName());
@@ -139,6 +152,14 @@ abstract class PatternFragment extends Fragment {
                                 break;
 
                             case 3:
+                                Log.d(TAG, line);
+                                //parse string with attach files f.e. can be some files of one file
+                                String nameFile = line.substring(line.indexOf("[") + 1, line.indexOf("]"));
+                                String[] files = nameFile.split(", ");
+                                attachFiles = files;
+                                break;
+
+                            case 4:
                                 subjectMail = line;
                                 break;
 
@@ -148,7 +169,7 @@ abstract class PatternFragment extends Fragment {
                         }
                         value += 1;
                     }
-                    mails.add(new MailStructure(fromMail, emailMail, subjectMail, contentMail, dateMail));
+                    mails.add(new MailStructure(fromMail, emailMail, subjectMail, contentMail, dateMail, attachFiles));
                     instream.close();
 
                 }
@@ -180,6 +201,7 @@ abstract class PatternFragment extends Fragment {
         @Override
         protected void onPostExecute(String[] value) {
             mailStructures = new ArrayList<>();
+            //read mail from file from directory of typeMail in root directory
             mailStructures = readMail(email, typeMail);
             RVAdapter adapter = new RVAdapter(mailStructures, context);
             adapter.notifyDataSetChanged();
@@ -187,6 +209,12 @@ abstract class PatternFragment extends Fragment {
         }
     }
 
+    /*
+    * Create dorectories with place path/name
+    * @param String path        Path to root directory
+    * @param String name        Name of creating directory
+    * @rreturn boolean          Is create directory
+    * */
     protected static boolean createDirIfNotExists(String path, String name) {
         boolean ret = true;
         File file = new File(path, name);
@@ -219,6 +247,7 @@ abstract class PatternFragment extends Fragment {
         delete(new File(Environment.getExternalStorageDirectory() + "/" + email, "Отправленные"));
         delete(new File(Environment.getExternalStorageDirectory() + "/" + email, "Удаленные"));
         delete(new File(Environment.getExternalStorageDirectory() + "/" + email, "Черновики"));
+        delete(new File(Environment.getExternalStorageDirectory() + "/" + email, "Attach"));
     }
 
     /*
@@ -229,6 +258,7 @@ abstract class PatternFragment extends Fragment {
         createDirIfNotExists(String.valueOf(Environment.getExternalStorageDirectory() + "/" + email), "Отправленные");
         createDirIfNotExists(String.valueOf(Environment.getExternalStorageDirectory() + "/" + email), "Удаленные");
         createDirIfNotExists(String.valueOf(Environment.getExternalStorageDirectory() + "/" + email), "Черновики");
+        createDirIfNotExists(String.valueOf(Environment.getExternalStorageDirectory() + "/" + email), "Attach");
     }
 
     /*
@@ -242,6 +272,7 @@ abstract class PatternFragment extends Fragment {
 
         String host = email.substring(email.lastIndexOf("@") + 1);
         Log.d(TAG, "Host email " + host);
+        //load mail from server to root directory for update mail
         switch (host){
             case "yandex.ru":
                 new Loader("imap.yandex.ru", email, password, "INBOX", getContext()).execute();
@@ -362,7 +393,7 @@ abstract class PatternFragment extends Fragment {
                         Log.d(TAG, "SUBJECT String: " + messages[i].getSubject());
                         arrayContent.add(body);
                         Log.d(TAG, "Content String " + body);
-                        createMail(arraySubject.get(i), arrayFrom.get(i), arrayEmail.get(i), arrayContent.get(i), arrayDateMail.get(i), typeMail, email);
+                        createMail(arraySubject.get(i), arrayFrom.get(i), arrayEmail.get(i), arrayContent.get(i), arrayDateMail.get(i), typeMail, email, new ArrayList<String>());
                     } else if (content instanceof Multipart) {
                         Multipart mp = (Multipart) content;
                         BodyPart bp = mp.getBodyPart(0);
@@ -372,8 +403,41 @@ abstract class PatternFragment extends Fragment {
                         arraySubject.add(messages[i].getSubject());
                         Log.d(TAG, "SUBJECT Multipart: " + messages[i].getSubject());
                         arrayContent.add(bp.getContent().toString());
-                        Log.d(TAG, "Content Multipart " + bp.getContent());
-                        createMail(arraySubject.get(i), arrayFrom.get(i), arrayEmail.get(i), arrayContent.get(i), arrayDateMail.get(i), typeMail, email);
+//                        createMail(arraySubject.get(i), arrayFrom.get(i), arrayEmail.get(i), arrayContent.get(i), arrayDateMail.get(i), typeMail, email);
+
+                        System.out.println("-------"+(i+1)+"-------");
+                        System.out.println(messages[i].getSentDate());
+                        Multipart multipart = (Multipart)messages[i].getContent();
+                        InputStream[] inputStreams = new InputStream[multipart.getCount()];
+                        List<String> arrayPathAttachFiles = new ArrayList<>();
+
+                        for(int j = 0; j < multipart.getCount(); j++) {
+                            BodyPart bodyPart = multipart.getBodyPart(j);
+                            Log.d(TAG, "bodyPart " + bodyPart.getFileName());
+                            Log.d(TAG, "BodyPart " + bodyPart);
+                            if (Part.ATTACHMENT.equalsIgnoreCase(bodyPart.getDisposition())) {
+                                System.out.println("Creating file with name without : " + bodyPart.getFileName());
+                                arrayPathAttachFiles.add(Environment.getExternalStorageDirectory().getAbsolutePath() + "/" + email + "/" + "Attach" + "/" + bodyPart.getFileName());
+                                File f = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + "/" + email + "/" + "Attach" + "/", bodyPart.getFileName());
+//                                File f = new File(Environment.getExternalStorageDirectory().getAbsolutePath(), bodyPart.getFileName());
+                                InputStream is = bodyPart.getInputStream();
+                                FileOutputStream fos = null;
+                                try {
+                                    fos = new FileOutputStream(f);
+                                    byte[] buf = new byte[4096];
+                                    int bytesRead;
+                                    while ((bytesRead = is.read(buf)) != -1) {
+                                        fos.write(buf, 0, bytesRead);
+                                    }
+                                    fos.close();
+                                } catch (FileNotFoundException e) {
+                                    e.printStackTrace();
+                                }
+                            }
+
+                        }
+                        createMail(arraySubject.get(i), arrayFrom.get(i), arrayEmail.get(i), arrayContent.get(i), arrayDateMail.get(i), typeMail, email, arrayPathAttachFiles);
+
                     }
                 }
 
@@ -390,7 +454,12 @@ abstract class PatternFragment extends Fragment {
         }
     }
 
-    protected void contentEmail(String folder){
+    /*
+    * Read mails from root directory + folder
+    * @param String folder        Name of directory for readed files with mails
+     * @return void
+    * */
+    protected void readMailFromStore(String folder){
         String host = email.substring(email.lastIndexOf("@") + 1);
         Log.d(TAG, "Host email " + host);
         switch (host){
@@ -414,7 +483,5 @@ abstract class PatternFragment extends Fragment {
                 new Reader(folder, getContext()).execute();
                 break;
         }
-
     }
-
 }
