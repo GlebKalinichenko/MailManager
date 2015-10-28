@@ -2,13 +2,17 @@ package com.example.gleb.mailmanager.fragments;
 
 
 import android.content.Intent;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.annotation.Nullable;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
+import android.view.ActionMode;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ProgressBar;
@@ -19,15 +23,33 @@ import com.example.gleb.mailmanager.recyclerview.ItemRecycler;
 import com.example.gleb.mailmanager.R;
 import com.example.gleb.mailmanager.swipe.SuperSwipeRefreshLayout;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Properties;
+
+import javax.mail.Flags;
+import javax.mail.Folder;
+import javax.mail.Message;
+import javax.mail.Session;
+import javax.mail.Store;
+
 /**
  * Created by Gleb on 18.10.2015.
  */
 public class InboxFragment extends PatternFragment {
     public static final String TAG = "TAG";
+    private List<Integer> positions;
+    private String nameFolder;
+    private List<String> folders;
 
-    public InboxFragment(String email, String password) {
+    public InboxFragment(String email, String password, String imapHost, String imapPort, String nameFolder, List<String> folders) {
         this.email = email;
         this.password = password;
+        this.imapHost = imapHost;
+        this.imapPort = imapPort;
+        this.nameFolder = nameFolder;
+        this.folders = folders;
+        Log.d(TAG, nameFolder);
     }
 
     @Override
@@ -53,7 +75,9 @@ public class InboxFragment extends PatternFragment {
 
                     @Override
                     public void onItemLongPress(View childView, int position) {
-
+                        positions = new ArrayList<Integer>();
+                        positions.add(position);
+                        actionMode = getActivity().startActionMode(callback);
                     }
                 })
         );
@@ -76,8 +100,8 @@ public class InboxFragment extends PatternFragment {
                                 progressBar.setVisibility(View.GONE);
                             }
                         }, 2000);
-                        updateMail();
-                        readMailFromStore("INBOX");
+                        updateMail(imapHost, imapPort, folders);
+                        readMailFromStore(nameFolder);
                     }
 
                     @Override
@@ -92,8 +116,83 @@ public class InboxFragment extends PatternFragment {
                     }
                 });
             //begin to read mails from root directory + directory "Inbox"
-            readMailFromStore("INBOX");
+            readMailFromStore(nameFolder);
 
         return v;
+    }
+
+    private ActionMode.Callback callback = new ActionMode.Callback() {
+
+        public boolean onCreateActionMode(ActionMode mode, Menu menu) {
+            mode.getMenuInflater().inflate(R.menu.menu_header, menu);
+            return true;
+        }
+
+        public boolean onPrepareActionMode(ActionMode mode, Menu menu) {
+            return false;
+        }
+
+        public boolean onActionItemClicked(ActionMode mode, MenuItem item) {
+            switch (item.getItemId()) {
+                case R.id.menu_delete:
+                        new Deleter(positions).execute();
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
+        public void onDestroyActionMode(ActionMode mode) {
+            Log.d(TAG, "destroy");
+            actionMode = null;
+        }
+
+    };
+
+    /*
+    * Delete item mail copy mail into folder Trash and delete from add flag deleted
+    * */
+    public class Deleter extends AsyncTask<String, String, String> {
+        private List<Integer> positionMail;
+
+        public Deleter(List<Integer> positionMail) {
+            this.positionMail = positionMail;
+        }
+
+        @Override
+        protected String doInBackground(String... params) {
+            Properties props = new Properties();
+            props.put("mail.imap.port", imapPort);
+            props.put("mail.imap.socketFactory.port", imapPort);
+            props.put("mail.imap.socketFactory.class", "javax.net.ssl.SSLSocketFactory");
+            props.put("mail.imap.socketFactory.fallback", "false");
+            props.setProperty("mail.store.protocol", "imaps");
+
+            try {
+                Session session = Session.getInstance(props, null);
+                Store store = session.getStore();
+                store.connect(imapHost, email, password);
+                Folder folderBox = store.getFolder("INBOX");
+                folderBox.open(Folder.READ_WRITE);
+
+                Message[] messages = folderBox.getMessages();
+                for (int i = 0; i < positionMail.size(); i++) {
+                    folderBox.copyMessages(new Message[]{messages[positionMail.get(i)]}, store.getFolder("Удаленные"));
+                    messages[positionMail.get(i)].setFlag(Flags.Flag.DELETED, true);
+                }
+                folderBox.close(true);
+                store.close();
+            }
+            catch(Exception e){
+                e.printStackTrace();
+            }
+
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(String s) {
+            super.onPostExecute(s);
+        }
     }
 }

@@ -13,10 +13,13 @@ import javax.activation.DataSource;
 import javax.activation.FileDataSource;
 import javax.activation.MailcapCommandMap;
 import javax.mail.BodyPart;
+import javax.mail.Folder;
+import javax.mail.Message;
 import javax.mail.MessagingException;
 import javax.mail.Multipart;
 import javax.mail.PasswordAuthentication;
 import javax.mail.Session;
+import javax.mail.Store;
 import javax.mail.Transport;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeBodyPart;
@@ -37,6 +40,8 @@ public class Mail extends javax.mail.Authenticator {
 
     private String port;
     private String sport;
+    private String imapHost;
+    private String imapPort;
 
     private String host;
     private String subject;
@@ -45,10 +50,12 @@ public class Mail extends javax.mail.Authenticator {
     private boolean auth;
     private Multipart multipart;
 
-    public Mail() {
-        host = "smtp.yandex.ru"; // default smtp server
-        port = "465"; // default smtp port
-        sport = "465"; // default socketfactory port
+    public Mail(String smtpHost, String smtpPort, String iHost, String iPort) {
+        host = smtpHost; // default smtp server
+        port = smtpPort; // default smtp port
+        sport = smtpPort; // default socketfactory port
+        imapHost = iHost;
+        imapPort = iPort;
 
         user = "";
         password = "";
@@ -69,8 +76,8 @@ public class Mail extends javax.mail.Authenticator {
         CommandMap.setDefaultCommandMap(mc);
     }
 
-    public Mail(String user, String password) {
-        this();
+    public Mail(String user, String password, String smtpHost, String smtpPort, String imapHost, String imapPort) {
+        this(smtpHost, smtpPort, imapHost, imapPort);
 
         this.user = user;
         this.password = password;
@@ -131,6 +138,43 @@ public class Mail extends javax.mail.Authenticator {
 
                 // send email
                 Transport.send(msg);
+
+                props = new Properties();
+                props.put("mail.imap.port", imapPort);
+                props.put("mail.imap.socketFactory.port", imapPort);
+                props.put("mail.imap.socketFactory.class", "javax.net.ssl.SSLSocketFactory");
+                props.put("mail.imap.socketFactory.fallback", "false");
+                props.setProperty("mail.store.protocol", "imaps");
+
+                try {
+                    session = Session.getInstance(props, null);
+                    Store store = session.getStore();
+                    store.connect(imapHost, user, password);
+                    Folder folderBox = store.getFolder("Отправленные");
+                    folderBox.open(Folder.READ_WRITE);
+
+                    MimeMessage message = new MimeMessage(session);
+
+                    // Set From: header field of the header.
+                    message.setFrom(new InternetAddress(from));
+                    // Set To: header field of the header.
+                    message.addRecipient(Message.RecipientType.TO, new InternetAddress(to[0]));
+                    // Set Subject: header field
+                    message.setSubject(subject);
+                    message.setSentDate(new Date());
+
+                    messageBodyPart = new MimeBodyPart();
+                    messageBodyPart.setText(body);
+                    multipart.addBodyPart(messageBodyPart);
+                    message.setContent(multipart);
+
+                    folderBox.appendMessages(new Message[]{message});
+                    folderBox.close(true);
+                    store.close();
+                }
+                catch(Exception e){
+                    e.printStackTrace();
+                }
 
                 } catch (MessagingException e) {
                     e.printStackTrace();

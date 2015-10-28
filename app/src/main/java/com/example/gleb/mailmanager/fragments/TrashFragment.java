@@ -24,9 +24,11 @@ import com.example.gleb.mailmanager.swipe.SuperSwipeRefreshLayout;
 public class TrashFragment extends PatternFragment {
     public static final String TAG = "Tag";
 
-    public TrashFragment(String email, String password) {
+    public TrashFragment(String email, String password, String imapHost, String imapPort) {
         this.email = email;
         this.password = password;
+        this.imapHost = imapHost;
+        this.imapPort = imapPort;
     }
 
     @Override
@@ -75,8 +77,8 @@ public class TrashFragment extends PatternFragment {
                                 progressBar.setVisibility(View.GONE);
                             }
                         }, 2000);
-                        updateMail();
-                        readMailFromStore("Удаленные");
+//                        updateMail(imapHost, imapPort);
+//                        readMailFromStore("Удаленные");
                     }
 
                     @Override
@@ -91,7 +93,7 @@ public class TrashFragment extends PatternFragment {
                     }
                 });
 
-        readMailFromStore("Удаленные");
+//        readMailFromStore("Удаленные");
 
         return v;
     }

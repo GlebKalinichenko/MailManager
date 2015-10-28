@@ -37,7 +37,20 @@ import com.example.gleb.mailmanager.navigationdrawer.NavDrawerItem;
 import com.example.gleb.mailmanager.navigationdrawer.NavDrawerListAdapter;
 
 import java.io.File;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
+import java.util.Properties;
+
+import javax.mail.Flags;
+import javax.mail.Folder;
+import javax.mail.Message;
+import javax.mail.Session;
+import javax.mail.Store;
+import javax.mail.Transport;
+import javax.mail.internet.InternetAddress;
+import javax.mail.internet.MimeMessage;
 
 /**
  * Created by Gleb on 18.10.2015.
@@ -45,13 +58,19 @@ import java.util.ArrayList;
 public class SenderMail extends PatternActivity {
     public static final String EMAIL = "Email";
     public static final String PASSWORD = "Password";
+    public static final String SMTP_SERVER = "Smtp server";
+    public static final String SMTP_PORT = "Smtp port";
     public static final String NEW_INBOXMAIL = "Inbox";
     public static final String ALL_INBOXMAIL = "All mail";
     public static final String DELETEDMAIL = "Deleted mail";
     public static final String OUTBOXMAIL = "Outbox mail";
     public static final String DRAFTMAIL = "Draft mail";
+    public static final String IMAP_SERVER = "Imap server";
+    public static final String IMAP_PORT = "Imap port";
     private String email;
     private String password;
+    private String smtpHost;
+    private String smtpPort;
     private EditText toEditText;
     private EditText subjectEditText;
     private EditText textEditText;
@@ -60,6 +79,8 @@ public class SenderMail extends PatternActivity {
     private int deletedMail;
     private int outBoxMail;
     private int draftMail;
+    private String imapHost;
+    private String imapPort;
     private ArrayList<String> filePath;
     public ArrayList<String> a;
 
@@ -86,7 +107,7 @@ public class SenderMail extends PatternActivity {
                 if (toEditText.getText().toString().equals("") || subjectEditText.getText().toString().equals("") || textEditText.getText().toString().equals("")) {
                     Toast.makeText(SenderMail.this, "Заполните все поля", Toast.LENGTH_LONG).show();
                 } else {
-                    Mail m = new Mail(email, password);
+                    Mail m = new Mail(email, password, smtpHost, smtpPort, imapHost, imapPort);
                     String[] toArr = {toEditText.getText().toString()};
                     m.setTo(toArr);
                     m.setFrom(email); // who is sending the email
@@ -100,8 +121,13 @@ public class SenderMail extends PatternActivity {
                 }
                     try {
                         if (m.send()) {
+//                            DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
+//                            Date date = new Date();
                             // success
                             Toast.makeText(SenderMail.this, "Письмо было отправлено.", Toast.LENGTH_LONG).show();
+//                            createMail(subjectEditText.getText().toString(), toEditText.getText().toString(),
+//                                    toEditText.getText().toString(), textEditText.getText().toString(),
+//                                    date.toString(), "Отправленные", email, filePath);
                         } else {
                             // failure
                             Toast.makeText(SenderMail.this, "Произошел сбой при отправке письма.", Toast.LENGTH_LONG).show();
@@ -175,22 +201,20 @@ public class SenderMail extends PatternActivity {
     public void initializeData(){
         email = getIntent().getStringExtra(SenderMail.EMAIL);
         password = getIntent().getStringExtra(SenderMail.PASSWORD);
+        smtpHost = getIntent().getStringExtra(SenderMail.SMTP_SERVER);
+        smtpPort = getIntent().getStringExtra(SenderMail.SMTP_PORT);
         newInboxMail = getIntent().getIntExtra(SenderMail.NEW_INBOXMAIL, 0);
         allInboxMail = getIntent().getIntExtra(SenderMail.ALL_INBOXMAIL, 0);
         outBoxMail = getIntent().getIntExtra(SenderMail.OUTBOXMAIL, 0);
         draftMail = getIntent().getIntExtra(SenderMail.DRAFTMAIL, 0);
         deletedMail = getIntent().getIntExtra(SenderMail.DELETEDMAIL, 0);
+        imapHost = getIntent().getStringExtra(SenderMail.IMAP_SERVER);
+        imapPort = getIntent().getStringExtra(SenderMail.IMAP_PORT);
     }
 
     @Override
     public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
 
-    }
-
-    @Override
-    public void onBackPressed() {
-        super.onBackPressed();
-        delete(new File(Environment.getExternalStorageDirectory(), email));
     }
 
     @Override

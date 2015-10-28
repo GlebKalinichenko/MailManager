@@ -24,9 +24,11 @@ import com.example.gleb.mailmanager.swipe.SuperSwipeRefreshLayout;
 public class OutboxFragment extends PatternFragment {
     public static final String TAG = "Tag";
 
-    public OutboxFragment(String email, String password) {
+    public OutboxFragment(String email, String password, String imapHost, String imapPort) {
         this.email = email;
         this.password = password;
+        this.imapHost = imapHost;
+        this.imapPort = imapPort;
     }
 
     @Override
@@ -75,8 +77,8 @@ public class OutboxFragment extends PatternFragment {
                                 progressBar.setVisibility(View.GONE);
                             }
                         }, 2000);
-                        updateMail();
-                        readMailFromStore("Отправленные");
+//                        updateMail(imapHost, imapPort);
+//                        readMailFromStore("Отправленные");
                     }
 
                     @Override
@@ -91,7 +93,7 @@ public class OutboxFragment extends PatternFragment {
                     }
                 });
 
-        readMailFromStore("Отправленные");
+//        readMailFromStore("Отправленные");
 
         return v;
     }
