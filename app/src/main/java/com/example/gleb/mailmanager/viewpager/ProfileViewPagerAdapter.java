@@ -4,10 +4,7 @@ import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentStatePagerAdapter;
 
-import com.example.gleb.mailmanager.fragments.DraftFragment;
 import com.example.gleb.mailmanager.fragments.InboxFragment;
-import com.example.gleb.mailmanager.fragments.OutboxFragment;
-import com.example.gleb.mailmanager.fragments.TrashFragment;
 
 import java.util.List;
 
@@ -22,9 +19,15 @@ public class ProfileViewPagerAdapter extends FragmentStatePagerAdapter {
     private String imapHost;
     private String imapPort;
     private List<String> nameFolders;
+    private int numMails;
+    private int offsetMails;
+    private String smtpHost;
+    private String smtpPort;
 
-    // Build a Constructor and assign the passed Values to appropriate values in the class
-    public ProfileViewPagerAdapter(FragmentManager fm, CharSequence mTitles[], int mNumbOfTabsumb, String email, String password, String imapHost, String imapPort, List<String> nameFolders) {
+    // Build headerAttach Constructor and assign the passed Values to appropriate values in the class
+    public ProfileViewPagerAdapter(FragmentManager fm, CharSequence mTitles[], int mNumbOfTabsumb,
+                                   String email, String password, String imapHost, String imapPort,
+                                   List<String> nameFolders, int numMails, int offsetMails, String smtpHost, String smtpPort) {
         super(fm);
 
         this.Titles = mTitles;
@@ -34,67 +37,18 @@ public class ProfileViewPagerAdapter extends FragmentStatePagerAdapter {
         this.imapHost = imapHost;
         this.imapPort = imapPort;
         this.nameFolders = nameFolders;
-
+        this.numMails = numMails;
+        this.offsetMails = offsetMails;
+        this.smtpHost = smtpHost;
+        this.smtpPort = smtpPort;
     }
 
     //This method return the fragment for the every position in the View Pager
     @Override
     public Fragment getItem(int position) {
-        InboxFragment tab1 = new InboxFragment(email, password, imapHost, imapPort, nameFolders.get(position), nameFolders);
+        InboxFragment tab1 = new InboxFragment(email, password, imapHost, imapPort, nameFolders.get(position), nameFolders, offsetMails, numMails, smtpHost, smtpPort);
         return tab1;
-//        switch (position) {
-//            case 0:
-//                InboxFragment tab1 = new InboxFragment(email, password, imapHost, imapPort);
-//                return tab1;
-//
-//            case 1:
-//                OutboxFragment tab2 = new OutboxFragment(email, password, imapHost, imapPort);
-//                return tab2;
-//
-//            case 2:
-//                DraftFragment tab3 = new DraftFragment(email, password, imapHost, imapPort);
-//                return tab3;
-//
-//            case 3:
-//                TrashFragment tab4 = new TrashFragment(email, password, imapHost, imapPort);
-//                return tab4;
-//
-//        }
-
-
-//            if(position == 0) // if the position is 0 we are returning the First tab
-//            {
-//                InboxFragment tab1 = new InboxFragment();
-//                return tab1;
-//            }
-//            else{
-//                if(position == 1) // if the position is 0 we are returning the First tab
-//                {
-//                    InboxFragment tab2 = new InboxFragment();
-//                    return tab2;
-//                }
-//                else{
-//                    if(position == 2) // if the position is 0 we are returning the First tab
-//                    {
-//                        InboxFragment tab3 = new InboxFragment();
-//                        return tab3;
-//                    }
-//                    else{
-//                        if(position == 3) // if the position is 0 we are returning the First tab
-//                        {
-//                            InboxFragment tab4 = new InboxFragment();
-//                            return tab4;
-//                        }
-//
-//                    }
-//
-//                }
-//
-//            }
-//
-//            InboxFragment tab5 = new InboxFragment();
-//            return null;
-        }
+    }
 
 
 

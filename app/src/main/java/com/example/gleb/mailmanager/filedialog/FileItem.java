@@ -85,7 +85,7 @@ public class FileItem extends LinearLayout {
 		this.label = (TextView) this.findViewById(R.id.textViewLabel);
 		this.listeners = new LinkedList<OnFileClickListener>();
 
-		// Add a listener for the click event.
+		// Add headerAttach listener for the click event.
 		this.setOnClickListener(this.clickListener);
 	}
 
@@ -130,7 +130,7 @@ public class FileItem extends LinearLayout {
 			// Replace the label by the file's name.
 			this.setLabel(file.getName());
 
-			// Change the icon, depending if the file is a folder or not.
+			// Change the icon, depending if the file is headerAttach folder or not.
 			this.updateIcon();
 		}
 	}
@@ -185,7 +185,7 @@ public class FileItem extends LinearLayout {
 	// ----- Miscellaneous methods ----- //
 
 	/**
-	 * Updates the icon according to if the file is a folder and if it can be selected.
+	 * Updates the icon according to if the file is headerAttach folder and if it can be selected.
 	 */
 	private void updateIcon() {
 		// Define the icon.
@@ -224,7 +224,7 @@ public class FileItem extends LinearLayout {
 	};
 
 	/**
-	 * Add a listener for the click event.
+	 * Add headerAttach listener for the click event.
 	 *
 	 * @param listener The listener to add.
 	 */
@@ -233,7 +233,7 @@ public class FileItem extends LinearLayout {
 	}
 
 	/**
-	 * Removes a listener for the click event.
+	 * Removes headerAttach listener for the click event.
 	 *
 	 * @param listener The listener to remove.
 	 */
@@ -249,11 +249,11 @@ public class FileItem extends LinearLayout {
 	}
 
 	/**
-	 * Interface definition for a callback to be invoked when a FileItem is clicked. 
+	 * Interface definition for headerAttach callback to be invoked when headerAttach FileItem is clicked.
 	 */
 	public interface OnFileClickListener {
 		/**
-		 * Called when a FileItem has been clicked.
+		 * Called when headerAttach FileItem has been clicked.
 		 *
 		 * @param source The source of the event.
 		 */

@@ -1,6 +1,7 @@
 package com.example.gleb.mailmanager.activities;
 
 import android.app.Activity;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -13,7 +14,9 @@ import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v4.widget.DrawerLayout;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.widget.Toolbar;
+import android.util.Base64;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -35,22 +38,33 @@ import com.example.gleb.mailmanager.images.RoundImage;
 import com.example.gleb.mailmanager.mailutils.Mail;
 import com.example.gleb.mailmanager.navigationdrawer.NavDrawerItem;
 import com.example.gleb.mailmanager.navigationdrawer.NavDrawerListAdapter;
+import com.example.gleb.mailmanager.security.RSA;
+import com.example.gleb.mailmanager.security.SHA1;
+import com.example.gleb.mailmanager.security.TripleDes;
 
 import java.io.File;
-import java.text.DateFormat;
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.security.GeneralSecurityException;
+import java.security.InvalidKeyException;
+import java.security.KeyFactory;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
+import java.security.PrivateKey;
+import java.security.PublicKey;
+import java.security.Signature;
+import java.security.SignatureException;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.X509EncodedKeySpec;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
-import java.util.Properties;
+import java.util.Calendar;
 
-import javax.mail.Flags;
-import javax.mail.Folder;
-import javax.mail.Message;
-import javax.mail.Session;
-import javax.mail.Store;
-import javax.mail.Transport;
-import javax.mail.internet.InternetAddress;
-import javax.mail.internet.MimeMessage;
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
 
 /**
  * Created by Gleb on 18.10.2015.
@@ -82,7 +96,9 @@ public class SenderMail extends PatternActivity {
     private String imapHost;
     private String imapPort;
     private ArrayList<String> filePath;
-    public ArrayList<String> a;
+    public ArrayList<String> headerAttach;
+    private String genKey;
+    private TripleDes des;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -92,7 +108,7 @@ public class SenderMail extends PatternActivity {
         initializeData();
 
         filePath = new ArrayList<String>();
-        a = new ArrayList<String>();
+        headerAttach = new ArrayList<String>();
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
@@ -113,12 +129,12 @@ public class SenderMail extends PatternActivity {
                     m.setFrom(email); // who is sending the email
                     m.setSubject(subjectEditText.getText().toString());
                     m.setBody(textEditText.getText().toString());
-                try {
-                    if (!filePath.equals(""))
-                    m.addAttachment(filePath);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
+                    try {
+                        if (!filePath.equals(""))
+                            m.addAttachment(filePath);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
                     try {
                         if (m.send()) {
 //                            DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
@@ -182,7 +198,7 @@ public class SenderMail extends PatternActivity {
                 R.drawable.ic_drawer, //nav menu toggle icon
                 R.string.app_name, // nav drawer open - description for accessibility
                 R.string.app_name // nav drawer close - description for accessibility
-        ){
+        ) {
             public void onDrawerClosed(View view) {
                 getSupportActionBar().setTitle(mTitle);
                 // calling onPrepareOptionsMenu() to show action bar icons
@@ -198,7 +214,8 @@ public class SenderMail extends PatternActivity {
         mDrawerLayout.setDrawerListener(mDrawerToggle);
     }
 
-    public void initializeData(){
+
+    public void initializeData() {
         email = getIntent().getStringExtra(SenderMail.EMAIL);
         password = getIntent().getStringExtra(SenderMail.PASSWORD);
         smtpHost = getIntent().getStringExtra(SenderMail.SMTP_SERVER);
@@ -220,7 +237,7 @@ public class SenderMail extends PatternActivity {
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.menu_mail_magaer, menu);
+        getMenuInflater().inflate(R.menu.send_mail, menu);
         return true;
     }
 
@@ -228,7 +245,7 @@ public class SenderMail extends PatternActivity {
     public boolean onOptionsItemSelected(MenuItem item) {
         // Handle action bar item clicks here. The action bar will
         // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
+        // as you specify headerAttach parent activity in AndroidManifest.xml.
         int id = item.getItemId();
 
         //noinspection SimplifiableIfStatement
@@ -238,45 +255,226 @@ public class SenderMail extends PatternActivity {
             return true;
         }
 
+        if (id == R.id.signature_mail) {
+            AlertDialog.Builder builder =
+                    new AlertDialog.Builder(SenderMail.this, R.style.AppCompatAlertDialogStyle);
+            builder.setTitle("Электронно-цифровая подпись");
+            builder.setMessage("Подписать письмо электронно-цифровой подписью?");
+            builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    try {
+                        hashText(textEditText.getText().toString());
+                    } catch (NoSuchProviderException e) {
+                        Toast.makeText(SenderMail.this, "Value 1", Toast.LENGTH_LONG).show();
+                        e.printStackTrace();
+                    } catch (NoSuchAlgorithmException e) {
+                        Toast.makeText(SenderMail.this, "Value 2", Toast.LENGTH_LONG).show();
+                        e.printStackTrace();
+                    } catch (SignatureException e) {
+                        Toast.makeText(SenderMail.this, "Value 3", Toast.LENGTH_LONG).show();
+                        e.printStackTrace();
+                    } catch (InvalidKeyException e) {
+                        Toast.makeText(SenderMail.this, "Value 4", Toast.LENGTH_LONG).show();
+                        e.printStackTrace();
+                    } catch (UnsupportedEncodingException e) {
+                        Toast.makeText(SenderMail.this, "Value 5", Toast.LENGTH_LONG).show();
+                        e.printStackTrace();
+                    } catch (GeneralSecurityException e) {
+                        Toast.makeText(SenderMail.this, "Value 6", Toast.LENGTH_LONG).show();
+                        e.printStackTrace();
+                    } catch (IOException e) {
+                        Toast.makeText(SenderMail.this, "Value 7", Toast.LENGTH_LONG).show();
+                        e.printStackTrace();
+                    }
+                }
+            });
+            builder.setNegativeButton("Отмена", null);
+            builder.show();
+            return true;
+        }
+
+        //encrypt mail with using public key
+        if (id == R.id.encrypt_mail) {
+            Intent intent = new Intent(SenderMail.this, FileChooserActivity.class);
+            startActivityForResult(intent, 1);
+            return true;
+        }
+
+        //generate key for encryption and decryption
+        if (id == R.id.generator_key) {
+            try {
+                File[] files = new File(Environment.getExternalStorageDirectory() + "/" + email, "/Keys").listFiles();
+                if (findGenerateKey(files, toEditText.getText().toString())) {
+                    Toast.makeText(SenderMail.this, "Ключ уже сгенерирован", Toast.LENGTH_LONG).show();
+                } else {
+                    RSA rsa = new RSA();
+                    String publicPath = RSA.createFile(toEditText.getText().toString() + "-" + "Public.txt", rsa.getPublicKey().getEncoded(), email);
+                    String privatePath = RSA.createFile(toEditText.getText().toString() + "-" + "Private.txt", rsa.getPrivateKey().getEncoded(), email);
+
+                    filePath.add(publicPath);
+                    headerAttach.add(publicPath.substring(publicPath.lastIndexOf("/") + 1));
+                    FragmentManager fragmentManager = getSupportFragmentManager();
+                    FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
+                    Log.d(TAG, "Name " + filePath);
+                    ArchiveFragment fragment = new ArchiveFragment(headerAttach);
+                    fragmentTransaction.add(R.id.fragment_container, fragment);
+                    fragmentTransaction.commitAllowingStateLoss();
+                }
+            } catch (NoSuchAlgorithmException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
+            } catch (GeneralSecurityException e) {
+                e.printStackTrace();
+            }
+            return true;
+        }
+
         return super.onOptionsItemSelected(item);
     }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if (resultCode == Activity.RESULT_OK) {
-            boolean fileCreated = false;
-            String attachPath = "";
-            String name = "";
+        //attach file
+        if (requestCode == 0) {
+            if (resultCode == Activity.RESULT_OK) {
+                boolean fileCreated = false;
+                String attachPath = "";
+                String name = "";
 
-            Bundle bundle = data.getExtras();
-            if(bundle != null)
-            {
-                if(bundle.containsKey(FileChooserActivity.OUTPUT_NEW_FILE_NAME)) {
-                    fileCreated = true;
-                    File folder = (File) bundle.get(FileChooserActivity.OUTPUT_FILE_OBJECT);
-                    name = bundle.getString(FileChooserActivity.OUTPUT_NEW_FILE_NAME);
-                    attachPath = folder.getAbsolutePath() + "/" + name;
-                } else {
-                    fileCreated = false;
-                    File file = (File) bundle.get(FileChooserActivity.OUTPUT_FILE_OBJECT);
-                    attachPath = file.getAbsolutePath();
+                Bundle bundle = data.getExtras();
+                if (bundle != null) {
+                    if (bundle.containsKey(FileChooserActivity.OUTPUT_NEW_FILE_NAME)) {
+                        fileCreated = true;
+                        File folder = (File) bundle.get(FileChooserActivity.OUTPUT_FILE_OBJECT);
+                        name = bundle.getString(FileChooserActivity.OUTPUT_NEW_FILE_NAME);
+                        attachPath = folder.getAbsolutePath() + "/" + name;
+                    } else {
+                        fileCreated = false;
+                        File file = (File) bundle.get(FileChooserActivity.OUTPUT_FILE_OBJECT);
+                        attachPath = file.getAbsolutePath();
+                    }
+                }
+
+                filePath.add(attachPath);
+
+                String message = fileCreated ? "File created" : "File opened";
+                message += ": " + filePath;
+                Toast.makeText(SenderMail.this, message, Toast.LENGTH_LONG).show();
+
+                headerAttach.add(attachPath.substring(attachPath.lastIndexOf("/") + 1));
+                FragmentManager fragmentManager = getSupportFragmentManager();
+                FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
+                Log.d(TAG, "Name " + filePath);
+                ArchiveFragment fragment = new ArchiveFragment(headerAttach);
+                fragmentTransaction.add(R.id.fragment_container, fragment);
+                fragmentTransaction.commitAllowingStateLoss();
+            }
+        } else {
+            //choose public key
+            if (resultCode == Activity.RESULT_OK) {
+                boolean fileCreated = false;
+                String attachPath = "";
+                String name = "";
+
+                Bundle bundle = data.getExtras();
+                if (bundle != null) {
+                    if (bundle.containsKey(FileChooserActivity.OUTPUT_NEW_FILE_NAME)) {
+                        fileCreated = true;
+                        File folder = (File) bundle.get(FileChooserActivity.OUTPUT_FILE_OBJECT);
+                        name = bundle.getString(FileChooserActivity.OUTPUT_NEW_FILE_NAME);
+                        attachPath = folder.getAbsolutePath() + "/" + name;
+                    } else {
+                        fileCreated = false;
+                        File file = (File) bundle.get(FileChooserActivity.OUTPUT_FILE_OBJECT);
+                        attachPath = file.getAbsolutePath();
+                    }
+                }
+
+                genKey = TripleDes.generateString("ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789");
+                try {
+                    des = new TripleDes(genKey, email);
+
+                    byte[] textEncrypt = des.encrypt(textEditText.getText().toString().getBytes("UTF-8"));
+                    byte[] textEncryptBase64 = Base64.encode(textEncrypt, Base64.DEFAULT);
+                    textEditText.setText(new String(textEncryptBase64, "UTF-8"));
+
+                    byte[] dataDecrypt = Base64.decode(textEditText.getText().toString(), Base64.DEFAULT);
+                    byte[] textDecrypt = des.decrypt(dataDecrypt);
+                    String text = new String(textDecrypt, "UTF-8");
+
+                    //read bytes from file for public key
+                    byte[] bytes = readContentIntoByteArray(new File(attachPath));
+                    //generate public key from bytes from file
+                    PublicKey publicKey = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(bytes));
+                    //encrypt bytes of key for 3des with ASCII
+                    byte[] rsaEncrypt = RSA.encryptRSA(Base64.encode(genKey.getBytes(), Base64.DEFAULT), publicKey);
+                    String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(Calendar.getInstance().getTime());
+                    String encryptDesKey = RSA.createFile(toEditText.getText().toString() + "-" + timeStamp + "-" + "RsaDes.txt", rsaEncrypt, email);
+
+//                    filePath.add(encryptDesKey);
+//                    headerAttach.add(encryptDesKey.substring(encryptDesKey.lastIndexOf("/") + 1));
+//                    FragmentManager fragmentManager = getSupportFragmentManager();
+//                    FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
+//                    Log.d(TAG, "Name " + filePath);
+//                    ArchiveFragment fragment = new ArchiveFragment(headerAttach);
+//                    fragmentTransaction.add(R.id.fragment_container, fragment);
+//                    fragmentTransaction.commitAllowingStateLoss();
+                } catch (InvalidKeySpecException e) {
+                    e.printStackTrace();
+                } catch (NoSuchAlgorithmException e) {
+                    e.printStackTrace();
+                } catch (IllegalBlockSizeException e) {
+                    e.printStackTrace();
+                } catch (InvalidKeyException e) {
+                    e.printStackTrace();
+                } catch (BadPaddingException e) {
+                    e.printStackTrace();
+                } catch (NoSuchPaddingException e) {
+                    e.printStackTrace();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                } catch (GeneralSecurityException e) {
+                    e.printStackTrace();
                 }
             }
-
-            filePath.add(attachPath);
-
-            String message = fileCreated? "File created" : "File opened";
-            message += ": " + filePath;
-            Toast.makeText(SenderMail.this, message, Toast.LENGTH_LONG).show();
-
-            a.add(attachPath.substring(attachPath.lastIndexOf("/") + 1));
-            FragmentManager fragmentManager = getSupportFragmentManager();
-            FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
-            Log.d(TAG, "Name " + filePath);
-            ArchiveFragment fragment = new ArchiveFragment(a);
-            fragmentTransaction.add(R.id.fragment_container, fragment);
-            fragmentTransaction.commitAllowingStateLoss();
         }
+    }
+
+    /*
+    * Create ElGamal digest signature for encrypted text
+    * */
+    private void hashText(String message) throws GeneralSecurityException, IOException {
+        KeyPairGenerator kg = KeyPairGenerator.getInstance("DSA");
+        kg.initialize(1024);
+        KeyPair pair = kg.generateKeyPair();
+        PrivateKey privKey = pair.getPrivate();
+        PublicKey pubKey = pair.getPublic();
+
+        Signature dsa = Signature.getInstance("SHA1withDSA");
+        dsa.initSign(privKey);
+        if (message.lastIndexOf('=') != -1){
+            dsa.update(SHA1.hexSha1Byte(message.substring(0, message.lastIndexOf('=') + 1)));
+        }
+        else{
+            dsa.update(SHA1.hexSha1Byte(message));
+        }
+        byte[] realSig = dsa.sign();
+
+        //add public key for verify
+        byte[] arrayPubKeyEncrypt = Base64.encode(pubKey.getEncoded(), Base64.DEFAULT);
+        textEditText.append("&" + new String(arrayPubKeyEncrypt, "UTF-8"));
+
+        //add signature key for verify
+        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(Calendar.getInstance().getTime());
+        String encryptDesKey = RSA.createFile(toEditText.getText().toString() + "-" + timeStamp + "-" + "Signature.txt", realSig, email);
+
+//        Signature verifyalg = Signature.getInstance("SHA256withDSA");
+//        verifyalg.initVerify(pubKey);
+//        message = "aaaaaa" + message;
+//        verifyalg.update(SHA256.hexSha1Byte(message.substring(0, message.lastIndexOf('=') + 1)));
+//        boolean verifies = verifyalg.verify(realSig);
     }
 
     private class ArchiveFragment extends Fragment {
@@ -289,7 +487,7 @@ public class SenderMail extends PatternActivity {
 
         @Override
         public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-            View v =inflater.inflate(R.layout.attach_archive, container,false);
+            View v = inflater.inflate(R.layout.attach_archive, container, false);
             LinearLayout layout = (LinearLayout) v.findViewById(R.id.LinearLayout1);
             for (int i = 0; i < name.size(); i++) {
                 LinearLayout.LayoutParams params1 = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);

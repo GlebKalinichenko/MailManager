@@ -14,6 +14,7 @@ import com.example.gleb.mailmanager.navigationdrawer.NavDrawerItem;
 import com.example.gleb.mailmanager.navigationdrawer.NavDrawerListAdapter;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.List;
@@ -87,5 +88,42 @@ abstract class PatternActivity extends AppCompatActivity implements ListView.OnI
         if (files != null)
             for (File f : files) delete(f);
         return file.delete();
+    }
+
+    /*
+    * Read content of file from file to bytes array
+    * @param File file      File for read content
+    * @return byte[]        Bytes array of content from file
+    * */
+    protected byte[] readContentIntoByteArray(File file) {
+        FileInputStream fileInputStream = null;
+        byte[] bFile = new byte[(int) file.length()];
+        try {
+            //convert file into array of bytes
+            fileInputStream = new FileInputStream(file);
+            fileInputStream.read(bFile);
+            fileInputStream.close();
+            for (int i = 0; i < bFile.length; i++) {
+                System.out.print((char) bFile[i]);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return bFile;
+    }
+
+    /*
+    * Find generate public key in folder "Keys"
+    * @param File[] files        Array of file in folder "Keys"
+    * @param String nameFile     Name file that searched
+    * @return boolean            Is file searched
+    * */
+    protected boolean findGenerateKey(File[] files, String nameFile){
+        for (File file : files){
+            if (file.getName().equals(nameFile + "-" + "Public.txt")){
+                return true;
+            }
+        }
+        return false;
     }
 }

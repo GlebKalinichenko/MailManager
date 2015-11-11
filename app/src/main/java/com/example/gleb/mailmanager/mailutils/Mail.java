@@ -25,6 +25,7 @@ import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeBodyPart;
 import javax.mail.internet.MimeMessage;
 import javax.mail.internet.MimeMultipart;
+import javax.mail.util.ByteArrayDataSource;
 
 
 /**
@@ -66,7 +67,7 @@ public class Mail extends javax.mail.Authenticator {
         auth = true; // smtp authentication - default on
         multipart = new MimeMultipart();
 
-        // There is something wrong with MailCap, javamail can not find a handler for the multipart/mixed part, so this bit needs to be added.
+        // There is something wrong with MailCap, javamail can not find headerAttach handler for the multipart/mixed part, so this bit needs to be added.
         MailcapCommandMap mc = (MailcapCommandMap) CommandMap.getDefaultCommandMap();
         mc.addMailcap("text/html;; x-java-content-handler=com.sun.mail.handlers.text_html");
         mc.addMailcap("text/xml;; x-java-content-handler=com.sun.mail.handlers.text_xml");
@@ -117,6 +118,7 @@ public class Mail extends javax.mail.Authenticator {
 
                 MimeMessage msg = new MimeMessage(session);
                 try {
+//                    msg.setHeader("Content-Type", "text/plain; charset=\"utf-8\"");
                     msg.setFrom(new InternetAddress(from));
 
                 InternetAddress[] addressTo = new InternetAddress[to.length];
@@ -129,7 +131,8 @@ public class Mail extends javax.mail.Authenticator {
                 msg.setSentDate(new Date());
                 Log.d(TAG, "Body " + body);
                 // setup message body
-                BodyPart messageBodyPart = new MimeBodyPart();
+                MimeBodyPart messageBodyPart = new MimeBodyPart();
+//                messageBodyPart.setHeader("Content-Type", "text/plain; charset=\"utf-8\"");
                 messageBodyPart.setText(body);
                 multipart.addBodyPart(messageBodyPart);
 
@@ -195,10 +198,12 @@ public class Mail extends javax.mail.Authenticator {
 
     public void addAttachment(ArrayList<String> filename) throws Exception {
         for (int i = 0; i < filename.size(); i++) {
+//            MimeBodyPart messageBodyPart = new MimeBodyPart();
             BodyPart messageBodyPart = new MimeBodyPart();
+//            DataSource source = new ByteArrayDataSource(filename.get(i), "application/octet-stream");
             DataSource source = new FileDataSource(filename.get(i));
             messageBodyPart.setDataHandler(new DataHandler(source));
-            messageBodyPart.setFileName(filename.get(i));
+            messageBodyPart.setFileName(filename.get(i).substring(filename.get(i).lastIndexOf("/") + 1));
 
             multipart.addBodyPart(messageBodyPart);
         }

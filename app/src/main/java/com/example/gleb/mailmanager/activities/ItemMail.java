@@ -1,6 +1,8 @@
 package com.example.gleb.mailmanager.activities;
 
+import android.app.Activity;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -8,15 +10,17 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.support.annotation.Nullable;
+import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.ActionBarDrawerToggle;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
-import android.support.v4.app.FragmentStatePagerAdapter;
 import android.support.v4.app.FragmentTransaction;
-import android.support.v4.view.ViewPager;
 import android.support.v4.widget.DrawerLayout;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.widget.Toolbar;
-import android.view.ActionMode;
+import android.text.Html;
+import android.util.Base64;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -29,20 +33,18 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.ProgressBar;
-import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.example.gleb.mailmanager.R;
 import com.example.gleb.mailmanager.basics.MailStructure;
+import com.example.gleb.mailmanager.filedialog.FileChooserActivity;
 import com.example.gleb.mailmanager.images.RoundImage;
 import com.example.gleb.mailmanager.navigationdrawer.NavDrawerItem;
 import com.example.gleb.mailmanager.navigationdrawer.NavDrawerListAdapter;
-import com.example.gleb.mailmanager.signin.SignIn;
-import com.example.gleb.mailmanager.sliding.SlidingTabLayout;
-import com.example.gleb.mailmanager.viewpager.ProfileViewPagerAdapter;
-
-import org.w3c.dom.Text;
+import com.example.gleb.mailmanager.security.RSA;
+import com.example.gleb.mailmanager.security.SHA1;
+import com.example.gleb.mailmanager.security.TripleDes;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -50,8 +52,23 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
+import java.security.GeneralSecurityException;
+import java.security.InvalidKeyException;
+import java.security.KeyFactory;
+import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
+import java.security.PublicKey;
+import java.security.Signature;
+import java.security.SignatureException;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.PKCS8EncodedKeySpec;
+import java.security.spec.X509EncodedKeySpec;
 import java.util.ArrayList;
-import java.util.List;
+
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
 
 
 /**
@@ -62,6 +79,10 @@ public class ItemMail extends PatternActivity {
     public static final String MAIL = "Mail";
     public static final String EMAIL = "Email";
     public static final String PASSWORD = "Password";
+    public static final String SMTP_SERVER = "Smtp server";
+    public static final String SMTP_PORT = "Smtp port";
+    public static final String IMAP_SERVER = "Imap server";
+    public static final String IMAP_PORT = "Imap port";
     private TextView fromTextView;
     private TextView emailTextView;
     private TextView dateTextView;
@@ -71,11 +92,13 @@ public class ItemMail extends PatternActivity {
     private int Numboftabs = 4;
     private String email;
     private String password;
-    private int newInboxMail;
-    private int allInboxMail;
-    private int deletedMail;
-    private int outBoxMail;
-    private int draftMail;
+    private String smtpHost;
+    private String smtpPort;
+    private String imapHost;
+    private String imapPort;
+    private ArrayList<String> filePath;
+    public byte[] bytesRsaEncrypt;
+    public byte[] byteSignature;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -85,6 +108,10 @@ public class ItemMail extends PatternActivity {
         mail = (MailStructure) getIntent().getSerializableExtra(ItemMail.MAIL);
         email = getIntent().getStringExtra(ItemMail.EMAIL);
         password = getIntent().getStringExtra(ItemMail.PASSWORD);
+        smtpHost = getIntent().getStringExtra(ItemMail.SMTP_SERVER);
+        smtpPort = getIntent().getStringExtra(ItemMail.SMTP_PORT);
+        imapHost = getIntent().getStringExtra(ItemMail.IMAP_SERVER);
+        imapPort = getIntent().getStringExtra(ItemMail.IMAP_PORT);
 
         fromTextView = (TextView) findViewById(R.id.fromTextView);
         emailTextView = (TextView) findViewById(R.id.emailTextView);
@@ -96,10 +123,27 @@ public class ItemMail extends PatternActivity {
         emailTextView.setText(mail.getEmail());
         dateTextView.setText(mail.getDate());
         subjectTextView.setText(mail.getSubject());
-        contentTextView.setText(mail.getContent());
+        contentTextView.setText(Html.fromHtml(mail.getContent()));
 
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
+
+        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
+        fab.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent(ItemMail.this, Answer.class);
+                intent.putExtra(Answer.EMAIL, email);
+                intent.putExtra(Answer.PASSWORD, password);
+                intent.putExtra(Answer.TO_EMAIL, emailTextView.getText().toString());
+                intent.putExtra(Answer.TO_SUBJECT, subjectTextView.getText().toString());
+                intent.putExtra(Answer.SMTP_SERVER, smtpHost);
+                intent.putExtra(Answer.SMTP_PORT, smtpPort);
+                intent.putExtra(Answer.IMAP_SERVER, imapHost);
+                intent.putExtra(Answer.IMAP_PORT, imapPort);
+                startActivity(intent);
+            }
+        });
 
         if (!isTheSame(mail.getAttachFiles(), new String[]{""})) {
             FragmentManager fragmentManager = getSupportFragmentManager();
@@ -176,6 +220,7 @@ public class ItemMail extends PatternActivity {
 
     }
 
+
     /*
     * Equals first array of String second array of String
     * @param String[] arr1        First array of String
@@ -193,7 +238,7 @@ public class ItemMail extends PatternActivity {
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.menu_mail, menu);
+        getMenuInflater().inflate(R.menu.menu_item_mail, menu);
         return true;
     }
 
@@ -201,7 +246,7 @@ public class ItemMail extends PatternActivity {
     public boolean onOptionsItemSelected(MenuItem item) {
         // Handle action bar item clicks here. The action bar will
         // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
+        // as you specify headerAttach parent activity in AndroidManifest.xml.
         int id = item.getItemId();
 
         //noinspection SimplifiableIfStatement
@@ -211,7 +256,209 @@ public class ItemMail extends PatternActivity {
             return true;
         }
 
+
+        if (id == R.id.check_signature) {
+            AlertDialog.Builder builder =
+                    new AlertDialog.Builder(ItemMail.this, R.style.AppCompatAlertDialogStyle);
+            builder.setTitle("Проверка электронно-цифровая подписи");
+            builder.setMessage("Проверить электронно-цифровую подпись?");
+            builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    Intent intent = new Intent(ItemMail.this, FileChooserActivity.class);
+                    startActivityForResult(intent, 2);
+                }
+            });
+            builder.setNegativeButton("Отмена", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    //choose private key for decrypt 3des
+                    Intent intent = new Intent(ItemMail.this, FileChooserActivity.class);
+                    startActivityForResult(intent, 1);
+                }
+            });
+            builder.show();
+            return true;
+        }
+
+        if (id == R.id.dencrypt_mail) {
+            //choose encrypt 3des by RSA public key
+            Intent intent = new Intent(ItemMail.this, FileChooserActivity.class);
+            startActivityForResult(intent, 0);
+            return true;
+        }
+
+
         return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        //download file to folder "Download"
+        if (requestCode == 0) {
+            if (resultCode == Activity.RESULT_OK) {
+                boolean fileCreated = false;
+                String attachPath = "";
+                String name = "";
+
+                Bundle bundle = data.getExtras();
+                if (bundle != null) {
+                    if (bundle.containsKey(FileChooserActivity.OUTPUT_NEW_FILE_NAME)) {
+                        fileCreated = true;
+                        File folder = (File) bundle.get(FileChooserActivity.OUTPUT_FILE_OBJECT);
+                        name = bundle.getString(FileChooserActivity.OUTPUT_NEW_FILE_NAME);
+                        attachPath = folder.getAbsolutePath() + "/" + name;
+                    } else {
+                        fileCreated = false;
+                        File file = (File) bundle.get(FileChooserActivity.OUTPUT_FILE_OBJECT);
+                        attachPath = file.getAbsolutePath();
+                    }
+                }
+
+                String message = fileCreated ? "File created" : "File opened";
+                message += ": " + filePath;
+                Toast.makeText(ItemMail.this, message, Toast.LENGTH_LONG).show();
+
+                //get symetric key encrypt by RSA key
+                bytesRsaEncrypt = readContentIntoByteArray(new File(attachPath));
+
+                Intent intent = new Intent(ItemMail.this, FileChooserActivity.class);
+                startActivityForResult(intent, 1);
+
+            }
+        } else {
+            if (requestCode == 1) {
+                //choose private key and decrypt mail
+                if (resultCode == Activity.RESULT_OK) {
+                    boolean fileCreated = false;
+                    String attachPath = "";
+                    String name = "";
+
+                    Bundle bundle = data.getExtras();
+                    if (bundle != null) {
+                        if (bundle.containsKey(FileChooserActivity.OUTPUT_NEW_FILE_NAME)) {
+                            fileCreated = true;
+                            File folder = (File) bundle.get(FileChooserActivity.OUTPUT_FILE_OBJECT);
+                            name = bundle.getString(FileChooserActivity.OUTPUT_NEW_FILE_NAME);
+                            attachPath = folder.getAbsolutePath() + "/" + name;
+                        } else {
+                            fileCreated = false;
+                            File file = (File) bundle.get(FileChooserActivity.OUTPUT_FILE_OBJECT);
+                            attachPath = file.getAbsolutePath();
+                        }
+                    }
+
+                    //get bytes array of private key from files
+                    byte[] bytesPrivateKey = readContentIntoByteArray(new File(attachPath));
+                    PrivateKey privateKey = null;
+                    try {
+                        //create private key from array bytes
+                        privateKey = KeyFactory.getInstance("RSA").generatePrivate(new PKCS8EncodedKeySpec(bytesPrivateKey));
+                        //decrypt encrypt RSA key
+                        byte[] rsaDecrypt = RSA.decryptRSA(bytesRsaEncrypt, privateKey);
+                        //change encode of byte array of decrypt key from ASCII to UTF-8
+                        byte[] gen = Base64.decode(rsaDecrypt, Base64.DEFAULT);
+                        String str = new String(gen);
+
+                        TripleDes des = new TripleDes(str, emailTextView.getText().toString());
+
+                        String s = contentTextView.getText().toString();
+                        s = s.replace("null", "");
+                        byte[] dataDecrypt = Base64.decode(s, Base64.DEFAULT);
+                        byte[] textDecrypt = des.decrypt(dataDecrypt);
+                        String text = new String(textDecrypt, "UTF-8");
+                        //show decrypted text
+                        contentTextView.setText(text);
+                    } catch (InvalidKeySpecException e) {
+                        e.printStackTrace();
+                    } catch (NoSuchAlgorithmException e) {
+                        e.printStackTrace();
+                    } catch (IllegalBlockSizeException e) {
+                        e.printStackTrace();
+                    } catch (InvalidKeyException e) {
+                        e.printStackTrace();
+                    } catch (BadPaddingException e) {
+                        e.printStackTrace();
+                    } catch (NoSuchPaddingException e) {
+                        e.printStackTrace();
+                    } catch (UnsupportedEncodingException e) {
+                        e.printStackTrace();
+                    } catch (GeneralSecurityException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+            else{
+                //choose private key and decrypt mail
+                if (resultCode == Activity.RESULT_OK) {
+                    boolean fileCreated = false;
+                    String attachPath = "";
+                    String name = "";
+
+                    Bundle bundle = data.getExtras();
+                    if (bundle != null) {
+                        if (bundle.containsKey(FileChooserActivity.OUTPUT_NEW_FILE_NAME)) {
+                            fileCreated = true;
+                            File folder = (File) bundle.get(FileChooserActivity.OUTPUT_FILE_OBJECT);
+                            name = bundle.getString(FileChooserActivity.OUTPUT_NEW_FILE_NAME);
+                            attachPath = folder.getAbsolutePath() + "/" + name;
+                        } else {
+                            fileCreated = false;
+                            File file = (File) bundle.get(FileChooserActivity.OUTPUT_FILE_OBJECT);
+                            attachPath = file.getAbsolutePath();
+                        }
+                    }
+
+                    byteSignature = readContentIntoByteArray(new File(attachPath));
+
+                    //string with public key from content of mail after &
+                    String digest = contentTextView.getText().toString().substring(
+                            contentTextView.getText().toString().indexOf("&") + 1,
+                            contentTextView.getText().toString().length());
+                    //delete last null from string of public key signature from content mail
+                    digest = digest.replace("null", "");
+                    //public key from signature in array bytes
+                    byte[] dataDigest = Base64.decode(digest, Base64.DEFAULT);
+
+                    //get main of content of mail without of public key of signature
+                    String content = contentTextView.getText().toString().substring(0,
+                            contentTextView.getText().toString().lastIndexOf('&'));
+                    contentTextView.setText(content);
+                    boolean verifies = true;
+                    try {
+                        X509EncodedKeySpec pubKeySpec = new X509EncodedKeySpec(dataDigest);
+                        Signature verifyalg = Signature.getInstance("SHA1withDSA");
+                        KeyFactory keyFactory = KeyFactory.getInstance("DSA");
+                        //generate public key for signature
+                        PublicKey pubKey = keyFactory.generatePublic(pubKeySpec);
+                        verifyalg.initVerify(pubKey);
+                        //add bytes of hash for check signature
+                        verifyalg.update(SHA1.hexSha1Byte(contentTextView.getText().toString()));
+                        verifies = verifyalg.verify(byteSignature);
+                        Log.d(TAG, String.valueOf(verifies));
+                    } catch (NoSuchAlgorithmException e) {
+                        e.printStackTrace();
+                    } catch (UnsupportedEncodingException e) {
+                        e.printStackTrace();
+                    } catch (InvalidKeySpecException e) {
+                        e.printStackTrace();
+                    } catch (InvalidKeyException e) {
+                        e.printStackTrace();
+                    } catch (SignatureException e) {
+                        e.printStackTrace();
+                    }
+
+                    if (!verifies){
+                        Toast.makeText(ItemMail.this, "Письмо было изменено", Toast.LENGTH_LONG).show();
+                    }
+                    else{
+                        if (verifies){
+                            Toast.makeText(ItemMail.this, "Письмо не было изменено", Toast.LENGTH_LONG).show();
+                        }
+                    }
+                }
+            }
+        }
     }
 
     /*
@@ -292,8 +539,7 @@ public class ItemMail extends PatternActivity {
             }
             in.close();
             out.close();
-        }
-        else{
+        } else {
             Toast.makeText(context, "Файл уже скачан", Toast.LENGTH_LONG).show();
         }
     }

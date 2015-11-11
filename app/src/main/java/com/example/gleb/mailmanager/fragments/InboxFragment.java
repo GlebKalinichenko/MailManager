@@ -41,14 +41,23 @@ public class InboxFragment extends PatternFragment {
     private List<Integer> positions;
     private String nameFolder;
     private List<String> folders;
+    private int numMails;
+    private int offsetMails;
+    private String smtpHost;
+    private String smtpPort;
 
-    public InboxFragment(String email, String password, String imapHost, String imapPort, String nameFolder, List<String> folders) {
+    public InboxFragment(String email, String password, String imapHost, String imapPort, String nameFolder, List<String> folders, int numMails, int offsetMails,
+                         String smtpHost, String smtpPort) {
         this.email = email;
         this.password = password;
         this.imapHost = imapHost;
         this.imapPort = imapPort;
         this.nameFolder = nameFolder;
         this.folders = folders;
+        this.numMails = numMails;
+        this.offsetMails = offsetMails;
+        this.smtpHost = smtpHost;
+        this.smtpPort = smtpPort;
         Log.d(TAG, nameFolder);
     }
 
@@ -70,6 +79,10 @@ public class InboxFragment extends PatternFragment {
                         intent.putExtra(ItemMail.MAIL, mailStructures.get(position));
                         intent.putExtra(ItemMail.EMAIL, email);
                         intent.putExtra(ItemMail.PASSWORD, password);
+                        intent.putExtra(ItemMail.SMTP_SERVER, smtpHost);
+                        intent.putExtra(ItemMail.SMTP_PORT, smtpPort);
+                        intent.putExtra(ItemMail.IMAP_SERVER, imapHost);
+                        intent.putExtra(ItemMail.IMAP_PORT, imapPort);
                         startActivity(intent);
                     }
 
@@ -100,7 +113,7 @@ public class InboxFragment extends PatternFragment {
                                 progressBar.setVisibility(View.GONE);
                             }
                         }, 2000);
-                        updateMail(imapHost, imapPort, folders);
+                        updateMail(imapHost, imapPort, folders, offsetMails, numMails);
                         readMailFromStore(nameFolder);
                     }
 

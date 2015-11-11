@@ -1,18 +1,20 @@
 package com.example.gleb.mailmanager.activities;
 
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Environment;
 import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActionBarDrawerToggle;
 import android.support.v4.app.FragmentStatePagerAdapter;
 import android.support.v4.view.ViewPager;
 import android.support.v4.widget.DrawerLayout;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.ActionMode;
@@ -23,17 +25,24 @@ import android.view.MenuItem;
 import android.view.ViewGroup;
 import android.widget.AbsListView;
 import android.widget.AdapterView;
+import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.example.gleb.mailmanager.R;
+import com.example.gleb.mailmanager.basics.User;
 import com.example.gleb.mailmanager.images.RoundImage;
+import com.example.gleb.mailmanager.mailutils.Mail;
 import com.example.gleb.mailmanager.navigationdrawer.NavDrawerItem;
 import com.example.gleb.mailmanager.navigationdrawer.NavDrawerListAdapter;
 import com.example.gleb.mailmanager.signin.SignIn;
 import com.example.gleb.mailmanager.viewpager.ProfileViewPagerAdapter;
 import com.example.gleb.mailmanager.sliding.SlidingTabLayout;
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -72,6 +81,10 @@ public class MailManager extends PatternActivity {
     public static final String OUTBOXMAIL = "Outbox mail";
     public static final String DRAFTMAIL = "Draft mail";
     public static final String LANGFOLDER = "Lang folder";
+    public static final String SAVE_USERS = "Save users";
+    public static final String IS_CHANGE = "Change";
+    public static final String NUM_MAILS = "Num mails";
+    public static final String OFFSET_MAIL = "Offset mail";
     private ImageView userImageView;
     private String email;
     private String password;
@@ -99,6 +112,11 @@ public class MailManager extends PatternActivity {
     private List<String> arrayContent;
     private List<String> arrayDateMail;
     private List<String> nameFolders;
+    private int offsetMail;
+    private List<User> users;
+    private SharedPreferences sPref;
+    private int isChange;
+    private int numMails;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -107,17 +125,44 @@ public class MailManager extends PatternActivity {
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
+        loadAccounts();
+
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
+                Intent intent = new Intent(MailManager.this, SignIn.class);
+                startActivity(intent);
             }
         });
 
         initializeValues();
         createBaseFolder();
+
+//        final MessageDigest md;
+//        final byte[] digestOfPassword;
+//        try {
+//            md = MessageDigest.getInstance("md5");
+//            digestOfPassword = md.digest("HG58YZ3CR9".getBytes("utf-8"));
+//            int headerAttach = md.getDigestLength();
+//        } catch (NoSuchAlgorithmException e) {
+//            e.printStackTrace();
+//        } catch (UnsupportedEncodingException e) {
+//            e.printStackTrace();
+//        }
+
+//        String decrypt = "";
+//
+//        try {
+//            TripleDes des = new TripleDes("Des key");
+//            TripleDes des_key = new TripleDes("Des");
+//            byte[] encrypt = des.encrypt("TripleDes".getBytes());
+//            byte[] encrypt_des = des_key.encrypt("Triple encryption value".getBytes());
+//            decrypt = new String(des.decrypt(encrypt));
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//        }
+//        String headerAttach = SHA256.hexSha1("Text");
 
         mTitle = mDrawerTitle = getTitle();
         // load slide menu items
@@ -179,9 +224,60 @@ public class MailManager extends PatternActivity {
         };
         mDrawerLayout.setDrawerListener(mDrawerToggle);
 
+        //first enter to account of mail
+        if (users == null) {
+            users = new ArrayList<>();
+        }
+
+        //change between accounts
+        if (isChange == 0) {
+            User user = new User(email, password, imapServer, imapPort, smtpServer, smtpPort, numMails, offsetMail);
+            users.add(user);
+        }
+
+        saveAccounts();
+
         nameFolders = new ArrayList<>();
-        String host = email.substring(email.lastIndexOf("@") + 1);
-        new Loader(imapServer, email, password, this, imapPort).execute();
+        if (isChange == 0) {
+            new Loader(imapServer, email, password, this, imapPort, offsetMail, numMails).execute();
+        }
+        else{
+            File file = new File(String.valueOf(Environment.getExternalStorageDirectory()), email);
+            String[] names = file.list();
+            nameFolders = new ArrayList<>();
+            CharSequence[] titles = new CharSequence[names.length - 2];
+            for (int i = 0; i < names.length; i++){
+                if (!names[i].equals("Attach") && !names[i].equals("Keys")){
+                    nameFolders.add(names[i]);
+                    titles[i - 2] = names[i];
+                }
+            }
+
+            int numTabs = nameFolders.size();
+
+            viewadapter =  new ProfileViewPagerAdapter(getSupportFragmentManager(), titles, numTabs,
+                    email, password, imapServer, imapPort, nameFolders, offsetMail, numMails,
+                    smtpServer, smtpPort);
+
+            // Assigning ViewPager View and setting the adapter
+            pager = (ViewPager) findViewById(R.id.pager);
+            pager.setAdapter(viewadapter);
+
+            // Assiging the Sliding Tab Layout View
+            tabs = (SlidingTabLayout) findViewById(R.id.tabs);
+            tabs.setDistributeEvenly(true); // To make the Tabs Fixed set this true, This makes the tabs Space Evenly in Available width
+
+            // Setting Custom Color for the Scroll bar indicator of the Tab View
+            tabs.setCustomTabColorizer(new SlidingTabLayout.TabColorizer() {
+                @Override
+                public int getIndicatorColor(int position) {
+                    return getResources().getColor(R.color.colorPrimary);
+                }
+            });
+
+            // Setting the ViewPager For the SlidingTabsLayout
+            tabs.setViewPager(pager);
+        }
     }
 
     /*
@@ -202,6 +298,33 @@ public class MailManager extends PatternActivity {
         deletedMail = getIntent().getIntExtra(MailManager.DELETEDMAIL, 0);
         outBoxMail = getIntent().getIntExtra(MailManager.OUTBOXMAIL, 0);
         draftMail = getIntent().getIntExtra(MailManager.DRAFTMAIL, 0);
+        isChange = getIntent().getIntExtra(MailManager.IS_CHANGE, 0);
+        numMails = getIntent().getIntExtra(MailManager.NUM_MAILS, 0);
+        offsetMail = getIntent().getIntExtra(MailManager.OFFSET_MAIL, 1);
+    }
+
+    /*
+    * Load accounts for show mails
+    * @param void
+    * @return void
+    * */
+    private void loadAccounts(){
+        sPref = getPreferences(MODE_PRIVATE);
+        String savedText = sPref.getString(SAVE_USERS, "");
+        users = new Gson().fromJson(savedText, new TypeToken<List<User>>() {
+        }.getType());
+    }
+
+    /*
+    * Save accounts for show mails
+    * @param void
+    * @return void
+    * */
+    private void saveAccounts(){
+        sPref = getPreferences(MODE_PRIVATE);
+        SharedPreferences.Editor ed = sPref.edit();
+        ed.putString(SAVE_USERS, new Gson().toJson(users));
+        ed.commit();
     }
 
     @Override
@@ -215,13 +338,72 @@ public class MailManager extends PatternActivity {
     public boolean onOptionsItemSelected(MenuItem item) {
         // Handle action bar item clicks here. The action bar will
         // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
+        // as you specify headerAttach parent activity in AndroidManifest.xml.
         int id = item.getItemId();
 
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
+            sPref = getPreferences(MODE_PRIVATE);
+            SharedPreferences.Editor ed = sPref.edit();
+
+            for (int i = 0; i < users.size(); i++){
+                if (users.get(i).getEmail().equals(email)){
+                    users.remove(i);
+                }
+            }
+
+            ed.putString(SAVE_USERS, new Gson().toJson(users));
+            ed.commit();
             delete(new File(Environment.getExternalStorageDirectory(), email));
             finish();
+            return true;
+        }
+
+        //load new mails from server
+        if (id == R.id.action_update) {
+            nameFolders.clear();
+            nameFolders = new ArrayList<>();
+            tabs = null;
+            viewadapter = null;
+            offsetMail++;
+            new Loader(imapServer, email, password, this, imapPort, offsetMail, numMails).execute();
+            return true;
+        }
+
+        //generate asymetric public and private key
+        if (id == R.id.know_key) {
+            AlertDialog.Builder builder =
+                    new AlertDialog.Builder(this, R.style.AppCompatAlertDialogStyle);
+            View view = (LinearLayout) getLayoutInflater().inflate(R.layout.send_key, null);
+            final EditText toEmailEditText = (EditText) view.findViewById(R.id.editText);
+            builder.setView(view);
+            builder.setTitle("Запрос на получение ключа");
+            builder.setMessage("Email получателя");
+            builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    String toEmail = toEmailEditText.getText().toString();
+                    String[] toArr = new String[]{toEmail};
+                    Mail m = new Mail(email, password, smtpServer, smtpPort, imapServer, imapPort);
+                    m.setTo(toArr);
+                    m.setFrom(email); // who is sending the email
+                    m.setSubject("Запрос на генерацию ключа для шифрования");
+                    m.setBody("Сгенерируйте ключ для шифрования письма и отправьте мне");
+                    try {
+                        if (m.send()) {
+                            // success
+                            Toast.makeText(MailManager.this, "Письмо было отправлено.", Toast.LENGTH_LONG).show();
+                        } else {
+                            // failure
+                            Toast.makeText(MailManager.this, "Произошел сбой при отправке письма.", Toast.LENGTH_LONG).show();
+                        }
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+            });
+            builder.setNegativeButton("Cancel", null);
+            builder.show();
             return true;
         }
 
@@ -247,7 +429,10 @@ public class MailManager extends PatternActivity {
                 break;
 
             case 6:
-                intent = new Intent(MailManager.this, SignIn.class);
+                intent = new Intent(MailManager.this, Accounts.class);
+                intent.putExtra(Accounts.ACCOUNTS, new Gson().toJson(users));
+                intent.putExtra(Accounts.EMAIL, email);
+                intent.putExtra(Accounts.PASSWORD, password);
                 startActivity(intent);
                 break;
         }
@@ -256,6 +441,7 @@ public class MailManager extends PatternActivity {
     public void createBaseFolder(){
         createDirIfNotExists(String.valueOf(Environment.getExternalStorageDirectory()), email);
         createDirIfNotExists(String.valueOf(Environment.getExternalStorageDirectory() + "/" + email), "Attach");
+        createDirIfNotExists(String.valueOf(Environment.getExternalStorageDirectory() + "/" + email), "Keys");
     }
 
     public static boolean createDirIfNotExists(String path, String name) {
@@ -272,6 +458,10 @@ public class MailManager extends PatternActivity {
 
     /*
     * Class for async query load mails from server and write to root directory
+    * @param String imapHost        Name of imap server
+    * @param String imapPort        Port of imap server
+    * @param int numMails           Num mails for load
+    * @param int offsetMail         Offset for mail load from server
     * */
     public class Loader extends AsyncTask<String, String, String[]> {
         private String imapHost;
@@ -279,13 +469,17 @@ public class MailManager extends PatternActivity {
         private String password;
         private Context context;
         private String imapPort;
+        private int offsetMail;
+        private int numMails;
 
-        public Loader(String imapHost, String user, String password, Context context, String imapPort) {
+        public Loader(String imapHost, String user, String password, Context context, String imapPort, int offsetMail, int numMails) {
             this.imapHost = imapHost;
             this.user = user;
             this.password = password;
             this.context = context;
             this.imapPort = imapPort;
+            this.offsetMail = offsetMail;
+            this.numMails = numMails;
         }
 
         @Override
@@ -306,15 +500,15 @@ public class MailManager extends PatternActivity {
                 for (Folder fd : folders) {
                     if (isGmailFolder(fd.getName())){
                         Log.d(TAG, fd.getName() + "/All Mail");
-                        parseMailFromServer(store, fd.getName() + "/", "All Mail");
-                        parseMailFromServer(store, fd.getName() + "/", "Drafts");
-                        parseMailFromServer(store, fd.getName() + "/", "Sent Mail");
-                        parseMailFromServer(store, fd.getName() + "/", "Spam");
-                        parseMailFromServer(store, fd.getName() + "/", "Starred");
-                        parseMailFromServer(store, fd.getName() + "/", "Trash");
+                        parseMailFromServer(store, fd.getName() + "/", "All Mail", offsetMail, numMails);
+                        parseMailFromServer(store, fd.getName() + "/", "Drafts", offsetMail, numMails);
+                        parseMailFromServer(store, fd.getName() + "/", "Sent Mail", offsetMail, numMails);
+                        parseMailFromServer(store, fd.getName() + "/", "Spam", offsetMail, numMails);
+                        parseMailFromServer(store, fd.getName() + "/", "Starred", offsetMail, numMails);
+                        parseMailFromServer(store, fd.getName() + "/", "Trash", offsetMail, numMails);
                     }
                     else {
-                        parseMailFromServer(store, fd.getName());
+                        parseMailFromServer(store, fd.getName(), offsetMail, numMails);
                     }
                 }
             } catch (Exception mex) {
@@ -334,7 +528,9 @@ public class MailManager extends PatternActivity {
 
             int numTabs = nameFolders.size();
 
-            viewadapter =  new ProfileViewPagerAdapter(getSupportFragmentManager(), titles, numTabs, email, password, imapServer, imapPort, nameFolders);
+            viewadapter =  new ProfileViewPagerAdapter(getSupportFragmentManager(), titles, numTabs,
+                    email, password, imapServer, imapPort, nameFolders, offsetMail, numMails,
+                    smtpServer, smtpPort);
 
             // Assigning ViewPager View and setting the adapter
             pager = (ViewPager) findViewById(R.id.pager);
@@ -375,7 +571,7 @@ public class MailManager extends PatternActivity {
     * @param String nameFolder  Folder for save mails in root directory
     * @return void
     * */
-    private void parseMailFromServer(Store store, String nameFolder) throws MessagingException, IOException {
+    private void parseMailFromServer(Store store, String nameFolder, int offsetMail, int numMails) throws MessagingException, IOException {
         nameFolders.add(nameFolder);
         createDirIfNotExists(String.valueOf(Environment.getExternalStorageDirectory() + "/" + email), nameFolder);
         Folder folderBox = store.getFolder(nameFolder);
@@ -388,6 +584,7 @@ public class MailManager extends PatternActivity {
 
         FlagTerm ft = new FlagTerm(new Flags(Flags.Flag.USER), false);
         Message[] messages = folderBox.search(ft);
+        messages = reverseMessageOrder(messages);
         Log.d(TAG, "Новые сообщения " + messages.length);
 
         for (Folder folder : store.getDefaultFolder().list("*")) {
@@ -400,7 +597,7 @@ public class MailManager extends PatternActivity {
         arrayDateMail = new ArrayList<>();
 
         if (messages.length != 0) {
-            for (int i = 0; i < 5; i++) {
+            for (int i = 0; i < numMails * offsetMail; i++) {
                 try{
                     if (messages[i] != null) {
                         Address[] in = messages[i].getFrom();
@@ -458,8 +655,10 @@ public class MailManager extends PatternActivity {
                                 Log.d(TAG, "BodyPart " + bodyPart);
                                 if (Part.ATTACHMENT.equalsIgnoreCase(bodyPart.getDisposition())) {
                                     System.out.println("Creating file with name without : " + bodyPart.getFileName());
-                                    arrayPathAttachFiles.add(Environment.getExternalStorageDirectory().getAbsolutePath() + "/" + email + "/" + "Attach" + "/" + bodyPart.getFileName());
-                                    File f = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + "/" + email + "/" + "Attach" + "/", bodyPart.getFileName());
+                                    arrayPathAttachFiles.add(Environment.getExternalStorageDirectory().getAbsolutePath() + "/" + email + "/" + "Attach" + "/" + bodyPart.getFileName() +
+                                            "-" + arrayDateMail.get(i));
+                                    File f = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + "/" + email + "/" + "Attach" + "/", bodyPart.getFileName() +
+                                            "-" + arrayDateMail.get(i));
                                     InputStream is = bodyPart.getInputStream();
                                     FileOutputStream fos = null;
                                     try {
@@ -490,11 +689,11 @@ public class MailManager extends PatternActivity {
     /*
     * Get mails from server to root directory
     * @param Store store        Store of settings
-    * @param String gmail       Folder of gmail f.r. [Gmail]
+    * @param String gmail       Folder of gmail f.e. [Gmail]
     * @param String nameFolder  Folder for save mails in root directory
     * @return void
     * */
-    private void parseMailFromServer(Store store, String gmail, String nameFolder) throws MessagingException, IOException {
+    private void parseMailFromServer(Store store, String gmail, String nameFolder, int offsetMail, int numMails) throws MessagingException, IOException {
         nameFolders.add(nameFolder);
         createDirIfNotExists(String.valueOf(Environment.getExternalStorageDirectory() + "/" + email), nameFolder);
         Folder folderBox = store.getFolder(gmail + nameFolder);
@@ -507,6 +706,7 @@ public class MailManager extends PatternActivity {
 
         FlagTerm ft = new FlagTerm(new Flags(Flags.Flag.USER), false);
         Message[] messages = folderBox.search(ft);
+        messages = reverseMessageOrder(messages);
         Log.d(TAG, "Новые сообщения " + messages.length);
 
         for (Folder folder : store.getDefaultFolder().list("*")) {
@@ -518,82 +718,106 @@ public class MailManager extends PatternActivity {
         arrayContent = new ArrayList<>();
         arrayDateMail = new ArrayList<>();
 
-        for (int i = 0; i < messages.length; i++) {
-            Address[] in = messages[i].getFrom();
-            for (Address address : in) {
-                String decodeAddress = MimeUtility.decodeText(address.toString());
-                System.out.println("FROM:" + address.toString());
-                if (decodeAddress.indexOf("<") == -1 && decodeAddress.indexOf(">") == -1){
-                    arrayEmail.add(decodeAddress);
-                    arrayFrom.add(decodeAddress);
-                }
-                else {
-                    //add email of sender of mail
-                    String emailValue = decodeAddress.substring(decodeAddress.indexOf("<"), decodeAddress.indexOf(">") + 1);
-                    arrayEmail.add(emailValue);
-                    //add name of sender of mail;
-                    String nameValue = decodeAddress.substring(0, decodeAddress.indexOf("<"));
-                    arrayFrom.add(nameValue);
-                }
-            }
-
-            Object content = new MimeMessage((MimeMessage) messages[i]).getContent();
-            //content = messages[i].getContent();
-            String[] parts = messages[i].getSentDate().toString().split(" ");
-
-            //mail content only string values or mail content images with different string values
-            if (content instanceof String) {
-                String body = (String) content;
-                Log.d(TAG, "SENT DATE String: " + messages[i].getSentDate());
-                //add date of mail
-                arrayDateMail.add(String.valueOf(messages[i].getSentDate().getDate()) + "." + (messages[i].getSentDate().getMonth() + 1) + "."
-                        + (messages[i].getSentDate().getYear() % 100) + "-" + parts[3]);
-                //add subject of mail
-                arraySubject.add(messages[i].getSubject());
-                Log.d(TAG, "SUBJECT String: " + messages[i].getSubject());
-                arrayContent.add(body);
-                Log.d(TAG, "Content String " + body);
-                createMail(arraySubject.get(i), arrayFrom.get(i), arrayEmail.get(i), arrayContent.get(i), arrayDateMail.get(i), nameFolder, email, new ArrayList<String>());
-            } else if (content instanceof Multipart) {
-                Multipart mp = (Multipart) content;
-                BodyPart bp = mp.getBodyPart(0);
-                arrayDateMail.add(String.valueOf(messages[i].getSentDate().getDate()) + "." + (messages[i].getSentDate().getMonth() + 1) + "."
-                        + (messages[i].getSentDate().getYear() % 100) + "-" + parts[3]);
-                Log.d(TAG, "SENT DATE Multipart: " + messages[i].getSentDate());
-                arraySubject.add(messages[i].getSubject());
-                Log.d(TAG, "SUBJECT Multipart: " + messages[i].getSubject());
-                arrayContent.add(bp.getContent().toString());
-
-                System.out.println("-------"+(i+1)+"-------");
-                System.out.println(messages[i].getSentDate());
-                Multipart multipart = (Multipart)content;
-                List<String> arrayPathAttachFiles = new ArrayList<>();
-
-                for(int j = 0; j < multipart.getCount(); j++) {
-                    BodyPart bodyPart = multipart.getBodyPart(j);
-                    Log.d(TAG, "bodyPart " + bodyPart.getFileName());
-                    Log.d(TAG, "BodyPart " + bodyPart);
-                    if (Part.ATTACHMENT.equalsIgnoreCase(bodyPart.getDisposition())) {
-                        System.out.println("Creating file with name without : " + bodyPart.getFileName());
-                        arrayPathAttachFiles.add(Environment.getExternalStorageDirectory().getAbsolutePath() + "/" + email + "/" + "Attach" + "/" + bodyPart.getFileName());
-                        File f = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + "/" + email + "/" + "Attach" + "/", bodyPart.getFileName());
-                        InputStream is = bodyPart.getInputStream();
-                        FileOutputStream fos = null;
-                        try {
-                            fos = new FileOutputStream(f);
-                            byte[] buf = new byte[4096];
-                            int bytesRead;
-                            while ((bytesRead = is.read(buf)) != -1) {
-                                fos.write(buf, 0, bytesRead);
+        if (messages.length != 0) {
+            for (int i = 0; i < numMails * offsetMail; i++) {
+                try {
+                    if (messages[i] != null) {
+                        Address[] in = messages[i].getFrom();
+                        for (Address address : in) {
+                            String decodeAddress = MimeUtility.decodeText(address.toString());
+                            System.out.println("FROM:" + address.toString());
+                            if (decodeAddress.indexOf("<") == -1 && decodeAddress.indexOf(">") == -1) {
+                                arrayEmail.add(decodeAddress);
+                                arrayFrom.add(decodeAddress);
+                            } else {
+                                //add email of sender of mail
+                                String emailValue = decodeAddress.substring(decodeAddress.indexOf("<"), decodeAddress.indexOf(">") + 1);
+                                arrayEmail.add(emailValue);
+                                //add name of sender of mail;
+                                String nameValue = decodeAddress.substring(0, decodeAddress.indexOf("<"));
+                                arrayFrom.add(nameValue);
                             }
-                            fos.close();
-                        } catch (FileNotFoundException e) {
-                            e.printStackTrace();
+                        }
+
+                        Object content = new MimeMessage((MimeMessage) messages[i]).getContent();
+                        //content = messages[i].getContent();
+                        String[] parts = messages[i].getSentDate().toString().split(" ");
+
+                        //mail content only string values or mail content images with different string values
+                        if (content instanceof String) {
+                            String body = (String) content;
+                            Log.d(TAG, "SENT DATE String: " + messages[i].getSentDate());
+                            //add date of mail
+                            arrayDateMail.add(String.valueOf(messages[i].getSentDate().getDate()) + "." + (messages[i].getSentDate().getMonth() + 1) + "."
+                                    + (messages[i].getSentDate().getYear() % 100) + "-" + parts[3]);
+                            //add subject of mail
+                            arraySubject.add(messages[i].getSubject());
+                            Log.d(TAG, "SUBJECT String: " + messages[i].getSubject());
+                            arrayContent.add(body);
+                            Log.d(TAG, "Content String " + body);
+                            createMail(arraySubject.get(i), arrayFrom.get(i), arrayEmail.get(i), arrayContent.get(i), arrayDateMail.get(i), nameFolder, email, new ArrayList<String>());
+                        } else if (content instanceof Multipart) {
+                            Multipart mp = (Multipart) content;
+                            BodyPart bp = mp.getBodyPart(0);
+                            arrayDateMail.add(String.valueOf(messages[i].getSentDate().getDate()) + "." + (messages[i].getSentDate().getMonth() + 1) + "."
+                                    + (messages[i].getSentDate().getYear() % 100) + "-" + parts[3]);
+                            Log.d(TAG, "SENT DATE Multipart: " + messages[i].getSentDate());
+                            arraySubject.add(messages[i].getSubject());
+                            Log.d(TAG, "SUBJECT Multipart: " + messages[i].getSubject());
+                            arrayContent.add(bp.getContent().toString());
+
+                            System.out.println("-------" + (i + 1) + "-------");
+                            System.out.println(messages[i].getSentDate());
+                            Multipart multipart = (Multipart) content;
+                            List<String> arrayPathAttachFiles = new ArrayList<>();
+
+                            for (int j = 0; j < multipart.getCount(); j++) {
+                                BodyPart bodyPart = multipart.getBodyPart(j);
+                                Log.d(TAG, "bodyPart " + bodyPart.getFileName());
+                                Log.d(TAG, "BodyPart " + bodyPart);
+                                if (Part.ATTACHMENT.equalsIgnoreCase(bodyPart.getDisposition())) {
+                                    System.out.println("Creating file with name without : " + bodyPart.getFileName());
+                                    arrayPathAttachFiles.add(Environment.getExternalStorageDirectory().getAbsolutePath() + "/" + email + "/" + "Attach" + "/" + bodyPart.getFileName() +
+                                            "-" + arrayDateMail.get(i));
+                                    File f = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + "/" + email + "/" + "Attach" + "/", bodyPart.getFileName() +
+                                            "-" + arrayDateMail.get(i));
+                                    InputStream is = bodyPart.getInputStream();
+                                    FileOutputStream fos = null;
+                                    try {
+                                        fos = new FileOutputStream(f);
+                                        byte[] buf = new byte[4096];
+                                        int bytesRead;
+                                        while ((bytesRead = is.read(buf)) != -1) {
+                                            fos.write(buf, 0, bytesRead);
+                                        }
+                                        fos.close();
+                                    } catch (FileNotFoundException e) {
+                                        e.printStackTrace();
+                                    }
+                                }
+                            }
+                            createMail(arraySubject.get(i), arrayFrom.get(i), arrayEmail.get(i), arrayContent.get(i), arrayDateMail.get(i), nameFolder, email, arrayPathAttachFiles);
                         }
                     }
+                } catch (Exception e) {
+                    continue;
                 }
-                createMail(arraySubject.get(i), arrayFrom.get(i), arrayEmail.get(i), arrayContent.get(i), arrayDateMail.get(i), nameFolder, email, arrayPathAttachFiles);
             }
         }
+    }
+
+    /*
+      * reverse the order of the messages
+      */
+    private static Message[] reverseMessageOrder(Message[] messages) {
+        Message revMessages[] = new Message[messages.length];
+        int i = messages.length - 1;
+        for (int j = 0; j < messages.length; j++, i--) {
+            revMessages[j] = messages[i];
+
+        }
+
+        return revMessages;
+
     }
 }

@@ -62,25 +62,25 @@ public class FileChooserActivity extends Activity implements FileChooser {
 	
 	/**
 	 * Constant used for represent the key of the bundle object (inside the start's intent) which contains  
-	 * a boolean that indicates if the user is going to select folders instead of select files. 
+	 * headerAttach boolean that indicates if the user is going to select folders instead of select files.
 	 */
 	public static final String INPUT_FOLDER_MODE = "input_folder_mode";
 	
 	/**
 	 * Constant used for represent the key of the bundle object (inside the start's intent) which contains  
-	 * a boolean that indicates if the user can create files. 
+	 * headerAttach boolean that indicates if the user can create files.
 	 */
 	public static final String INPUT_CAN_CREATE_FILES = "input_can_create_files";
 	
 	/**
 	 * Constant used for represent the key of the bundle object (inside the start's intent) which contains 
-	 * a regular expression which is going to be used as a filter to determine which files can be selected. 
+	 * headerAttach regular expression which is going to be used as headerAttach filter to determine which files can be selected.
 	 */
 	public static final String INPUT_REGEX_FILTER = "input_regex_filter";
 	
 	/**
 	 * Constant used for represent the key of the bundle object (inside the start's intent) which contains  
-	 * a boolean that indicates if only the files that can be selected must be displayed.
+	 * headerAttach boolean that indicates if only the files that can be selected must be displayed.
 	 */
 	public static final String INPUT_SHOW_ONLY_SELECTABLE = "input_show_only_selectable";
 	
@@ -92,26 +92,26 @@ public class FileChooserActivity extends Activity implements FileChooser {
 	
 	/**
 	 * Constant used for represent the key of the bundle object (inside the start's intent) which contains  
-	 * a boolean that indicates if a confirmation dialog must be displayed when creating a file.
+	 * headerAttach boolean that indicates if headerAttach confirmation dialog must be displayed when creating headerAttach file.
 	 */
 	public static final String INPUT_SHOW_CONFIRMATION_ON_CREATE = "input_show_confirmation_on_create";
 	
 	/**
 	 * Constant used for represent the key of the bundle object (inside the start's intent) which contains  
-	 * a boolean that indicates if a confirmation dialog must be displayed when selecting a file.
+	 * headerAttach boolean that indicates if headerAttach confirmation dialog must be displayed when selecting headerAttach file.
 	 */
 	public static final String INPUT_SHOW_CONFIRMATION_ON_SELECT = "input_show_confirmation_on_select";
 	
 	/**
 	 * Constant used for represent the key of the bundle object (inside the start's intent) which contains  
-	 * a boolean that indicates if the title must show the full path of the current's folder (true) or only
+	 * headerAttach boolean that indicates if the title must show the full path of the current's folder (true) or only
 	 * the folder's name (false).
 	 */
 	public static final String INPUT_SHOW_FULL_PATH_IN_TITLE = "input_show_full_path_in_title";
 	
 	/**
 	 * Constant used for represent the key of the bundle object (inside the start's intent) which contains  
-	 * a boolean that indicates if the 'Back' button must be used to navigate to the parents folder (true) or
+	 * headerAttach boolean that indicates if the 'Back' button must be used to navigate to the parents folder (true) or
 	 * if must follow the default behavior (and close the activity when the button is pressed).
 	 */
 	public static final String INPUT_USE_BACK_BUTTON_TO_NAVIGATE = "input_use_back_button_to_navigate";
@@ -119,7 +119,7 @@ public class FileChooserActivity extends Activity implements FileChooser {
 	/**
 	 * Constant used for represent the key of the bundle object (inside the result's intent) which contains the 
 	 * File object, that represents the file selected by the user or the folder in which the user wants to create
-	 * a file. 
+	 * headerAttach file.
 	 */
 	public static final String OUTPUT_FILE_OBJECT = "output_file_object";
 	
@@ -165,11 +165,11 @@ public class FileChooserActivity extends Activity implements FileChooser {
             if(extras.containsKey(INPUT_USE_BACK_BUTTON_TO_NAVIGATE)) this.useBackButton = extras.getBoolean(INPUT_USE_BACK_BUTTON_TO_NAVIGATE);
         }
 
-        // Load the files of a folder.
+        // Load the files of headerAttach folder.
         core.loadFolder(folderPath);
         this.startFolder = this.core.getCurrentFolder();
         
-        // Add a listener for when a file is selected.
+        // Add headerAttach listener for when headerAttach file is selected.
         core.addListener(new FileChooserCore.OnFileSelectedListener() {
 			public void onFileSelected(File folder, String name) {
 				// Pass the data through an intent.

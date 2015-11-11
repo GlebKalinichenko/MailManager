@@ -38,7 +38,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 /**
- * This class implements the common features of a file chooser.
+ * This class implements the common features of headerAttach file chooser.
  */
 class FileChooserCore {
 
@@ -50,7 +50,7 @@ class FileChooserCore {
 	private FileChooser chooser;
 
 	/**
-	 * The listeners for the event of select a file.
+	 * The listeners for the event of select headerAttach file.
 	 */
 	private List<OnFileSelectedListener> listeners;
 
@@ -85,12 +85,12 @@ class FileChooserCore {
 	private FileChooserLabels labels;
 
 	/**
-	 * A boolean that indicates if a confirmation dialog must be displaying when selecting a file.
+	 * A boolean that indicates if headerAttach confirmation dialog must be displaying when selecting headerAttach file.
 	 */
 	private boolean showConfirmationOnSelect;
 
 	/**
-	 * A boolean that indicates if a confirmation dialog must be displaying when creating a file.
+	 * A boolean that indicates if headerAttach confirmation dialog must be displaying when creating headerAttach file.
 	 */
 	private boolean showConfirmationOnCreate;
 
@@ -176,7 +176,7 @@ class FileChooserCore {
 			alert.setPositiveButton(posButton, new DialogInterface.OnClickListener() {
 				public void onClick(DialogInterface dialog, int whichButton) {
 					String fileName = input.getText().toString();
-					// Verify if a value has been entered.
+					// Verify if headerAttach value has been entered.
 					if(fileName != null && fileName.length() > 0) {
 						// Notify the listeners.
 						FileChooserCore.this.notifyListeners(FileChooserCore.this.currentFolder, fileName);
@@ -205,11 +205,11 @@ class FileChooserCore {
 	};
 	
 	/**
-	 * Implementation of the click listener for when a file item is clicked.
+	 * Implementation of the click listener for when headerAttach file item is clicked.
 	 */
 	private FileItem.OnFileClickListener fileItemClickListener = new FileItem.OnFileClickListener() {
 		public void onClick(FileItem source) {
-			// Verify if the item is a folder.
+			// Verify if the item is headerAttach folder.
 			File file = source.getFile();
 			if(file.isDirectory()) {
 				// Open the folder.
@@ -222,7 +222,7 @@ class FileChooserCore {
 	};
 	
 	/**
-	 * Add a listener for the event of a file selected.
+	 * Add headerAttach listener for the event of headerAttach file selected.
 	 * 
 	 * @param listener The listener to add.
 	 */
@@ -231,7 +231,7 @@ class FileChooserCore {
 	}
 	
 	/**
-	 * Removes a listener for the event of a file selected.
+	 * Removes headerAttach listener for the event of headerAttach file selected.
 	 * 
 	 * @param listener The listener to remove.
 	 */
@@ -240,25 +240,25 @@ class FileChooserCore {
 	}
 	
 	/**
-	 * Removes all the listeners for the event of a file selected.
+	 * Removes all the listeners for the event of headerAttach file selected.
 	 */
 	public void removeAllListeners() {
 		this.listeners.clear();
 	}
 	
 	/**
-	 * Interface definition for a callback to be invoked when a file is selected. 
+	 * Interface definition for headerAttach callback to be invoked when headerAttach file is selected.
 	 */
 	public interface OnFileSelectedListener {
 		/**
-		 * Called when a file has been selected.
+		 * Called when headerAttach file has been selected.
 		 * 
 		 * @param file The file selected.
 		 */
 		void onFileSelected(File file);
 		
 		/**
-		 * Called when an user wants to be create a file.
+		 * Called when an user wants to be create headerAttach file.
 		 * 
 		 * @param folder The file's parent folder.
 		 * @param name The file's name.
@@ -267,16 +267,16 @@ class FileChooserCore {
 	}
 	
 	/**
-	 * Notify to all listeners that a file has been selected or created.
+	 * Notify to all listeners that headerAttach file has been selected or created.
 	 * 
 	 * @param file The file or folder selected or the folder in which the file must be created.
-	 * @param name The name of the file that must be created or 'null' if a file was selected (instead of being created).
+	 * @param name The name of the file that must be created or 'null' if headerAttach file was selected (instead of being created).
 	 */
 	private void notifyListeners(final File file, final String name) {
-		// Determine if a file has been selected or created.
+		// Determine if headerAttach file has been selected or created.
 		final boolean creation = name != null && name.length() > 0;
 		
-		// Verify if a confirmation dialog must be show.
+		// Verify if headerAttach confirmation dialog must be show.
 		if((creation && this.showConfirmationOnCreate || !creation && this.showConfirmationOnSelect)) {
 			// Create an alert dialog.
 			Context context = this.chooser.getContext();
@@ -334,7 +334,7 @@ class FileChooserCore {
 	// ----- Get and set methods ----- //
 	
 	/**
-	 * Allows to define if a confirmation dialog must be show when selecting a file.
+	 * Allows to define if headerAttach confirmation dialog must be show when selecting headerAttach file.
 	 * 
 	 * @param show 'true' for show the confirmation dialog, 'false' for not show the dialog.
 	 */
@@ -343,7 +343,7 @@ class FileChooserCore {
 	}
 	
 	/**
-	 * Allows to define if a confirmation dialog must be show when creating a file.
+	 * Allows to define if headerAttach confirmation dialog must be show when creating headerAttach file.
 	 * 
 	 * @param show 'true' for show the confirmation dialog, 'false' for not show the dialog.
 	 */
@@ -364,7 +364,7 @@ class FileChooserCore {
 	public void setLabels(FileChooserLabels labels) {
 		this.labels = labels;
 		
-		// Verify if the buttons for add a file or select a folder has been modified.
+		// Verify if the buttons for add headerAttach file or select headerAttach folder has been modified.
 		if(labels != null) {
 			LinearLayout root = this.chooser.getRootLayout();
 			
@@ -381,7 +381,7 @@ class FileChooserCore {
 	}
 	
 	/**
-	 * Set a regular expression to filter the files that can be selected.
+	 * Set headerAttach regular expression to filter the files that can be selected.
 	 * 
 	 * @param filter A regular expression.
 	 */
@@ -493,7 +493,7 @@ class FileChooserCore {
 	}
 	
 	/**
-	 * Loads all the files of a folder in the file chooser.
+	 * Loads all the files of headerAttach folder in the file chooser.
 	 * 
 	 * If no path is specified ('folderPath' is null) the root folder of the SD card is going to be used.
 	 * 
@@ -510,7 +510,7 @@ class FileChooserCore {
 	}
 	
 	/**
-	 * Loads all the files of a folder in the file chooser.
+	 * Loads all the files of headerAttach folder in the file chooser.
 	 * 
 	 * If no path is specified ('folder' is null) the root folder of the SD card is going to be used.
 	 * 
@@ -545,7 +545,7 @@ class FileChooserCore {
 				}
 			}
 			
-			// Verify if the file is a directory.
+			// Verify if the file is headerAttach directory.
 			if(this.currentFolder.isDirectory()) {
 				// Get the folder's files.
 				File[] fileList = this.currentFolder.listFiles();
@@ -564,7 +564,7 @@ class FileChooserCore {
 					
 					// Iterate all the files in the folder.
 					for(int i=0; i<fileList.length; i++) {
-						// Verify if file can be selected (is a directory or folder mode is not activated and the file pass the filter, if defined).
+						// Verify if file can be selected (is headerAttach directory or folder mode is not activated and the file pass the filter, if defined).
 						boolean selectable = true;
 						if(!fileList[i].isDirectory()) {
 							selectable = !this.folderMode && (this.filter == null || fileList[i].getName().matches(this.filter));
@@ -584,7 +584,7 @@ class FileChooserCore {
 				String currentFolderName = this.showFullPathInTitle? this.currentFolder.getPath() : this.currentFolder.getName();
 				this.chooser.setCurrentFolderName(currentFolderName);
 			} else {
-				// The file is not a folder, add only this file.
+				// The file is not headerAttach folder, add only this file.
 				fileItems.add(new FileItem(this.chooser.getContext(), this.currentFolder));
 			}
 	

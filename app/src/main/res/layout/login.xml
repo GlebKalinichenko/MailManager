@@ -136,6 +136,29 @@
 
         </LinearLayout>
 
+        <LinearLayout
+            android:orientation="horizontal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <android.support.design.widget.TextInputLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:layout_marginBottom="8dp"
+                android:textColorHint="@android:color/white"
+                android:layout_weight="1">
+                <EditText
+                    android:id="@+id/numMailEditText"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="textEmailAddress"
+                    android:textColor="@android:color/white"
+                    android:hint="Num of mails"/>
+            </android.support.design.widget.TextInputLayout>
+
+        </LinearLayout>
+
     </LinearLayout>
     <android.support.design.widget.FloatingActionButton
         android:id="@+id/fab"

@@ -1,0 +1,21 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools" tools:context=".MailMagaer">
+    <item android:id="@+id/action_settings" android:title="@string/add_file"
+        android:orderInCategory="100" app:showAsAction="never" />
+    <item android:id="@+id/generator_key"
+        android:title="Сгенерировать ключ"
+        android:orderInCategory="100"
+        android:icon="@drawable/encrypt"
+        app:showAsAction="always" />
+    <item android:id="@+id/encrypt_mail"
+        android:title="Зашифровать письмо"
+        android:orderInCategory="100"
+        android:icon="@drawable/lock"
+        app:showAsAction="always" />
+    <item android:id="@+id/signature_mail"
+        android:title="Подписать письмо"
+        android:orderInCategory="100"
+        android:icon="@drawable/signature"
+        app:showAsAction="always" />
+</menu>

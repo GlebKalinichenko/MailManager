@@ -293,7 +293,7 @@ public class SuperSwipeRefreshLayout extends ViewGroup {
 
 	/**
 	 * Notify the widget that refresh state has changed. Do not call this when
-	 * refresh is triggered by a swipe gesture.
+	 * refresh is triggered by headerAttach swipe gesture.
 	 *
 	 * @param refreshing
 	 *            Whether or not the view should show refresh progress.
@@ -390,7 +390,7 @@ public class SuperSwipeRefreshLayout extends ViewGroup {
 	}
 
 	/**
-	 * Set the distance to trigger a sync in dips
+	 * Set the distance to trigger headerAttach sync in dips
 	 *
 	 * @param distance
 	 */

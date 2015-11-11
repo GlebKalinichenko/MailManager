@@ -4,15 +4,19 @@ import android.content.Context;
 import android.os.AsyncTask;
 import android.os.Environment;
 import android.support.v4.app.Fragment;
+import android.support.v4.view.ViewPager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.ActionMode;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
+import com.example.gleb.mailmanager.R;
 import com.example.gleb.mailmanager.basics.MailStructure;
 import com.example.gleb.mailmanager.recyclerview.RVAdapter;
+import com.example.gleb.mailmanager.sliding.SlidingTabLayout;
 import com.example.gleb.mailmanager.swipe.SuperSwipeRefreshLayout;
+import com.example.gleb.mailmanager.viewpager.ProfileViewPagerAdapter;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -267,14 +271,14 @@ abstract class PatternFragment extends Fragment {
     * @param String imapPort        Port of imap sever
     * @param List<String> folders   Folders for delete
     * */
-    protected void updateMail(String imapHost, String imapPort, List<String> folders){
+    protected void updateMail(String imapHost, String imapPort, List<String> folders, int numMails, int offsetMail){
         //clear files in root directory
         deleteInRootDirectory(folders);
         //create folder for attach
         createDirIfNotExists(String.valueOf(Environment.getExternalStorageDirectory() + "/" + email), "Attach");
         //load mail from server to root directory for update mail
         nameFolders = new ArrayList<>();
-        new Loader(imapHost, email, password, getContext(), imapPort).execute();
+        new Loader(imapHost, email, password, getContext(), imapPort, offsetMail, numMails).execute();
     }
 
     /*
@@ -286,13 +290,17 @@ abstract class PatternFragment extends Fragment {
         private String password;
         private Context context;
         private String imapPort;
+        private int offsetMail;
+        private int numMails;
 
-        public Loader(String imapHost, String user, String password, Context context, String imapPort) {
+        public Loader(String imapHost, String user, String password, Context context, String imapPort, int offsetMail, int numMails) {
             this.imapHost = imapHost;
             this.user = user;
             this.password = password;
             this.context = context;
             this.imapPort = imapPort;
+            this.offsetMail = offsetMail;
+            this.numMails = numMails;
         }
 
         @Override
@@ -311,18 +319,17 @@ abstract class PatternFragment extends Fragment {
 
                 Folder[] folders = store.getDefaultFolder().list();
                 for (Folder fd : folders) {
-                    //is folder gmail
-                    if (isGmailFolder(fd.getName())) {
+                    if (isGmailFolder(fd.getName())){
                         Log.d(TAG, fd.getName() + "/All Mail");
-                        parseMailFromServer(store, fd.getName() + "/", "All Mail");
-                        parseMailFromServer(store, fd.getName() + "/", "Drafts");
-                        parseMailFromServer(store, fd.getName() + "/", "Sent Mail");
-                        parseMailFromServer(store, fd.getName() + "/", "Spam");
-                        parseMailFromServer(store, fd.getName() + "/", "Starred");
-                        parseMailFromServer(store, fd.getName() + "/", "Trash");
-                    } else {
-                        //another folder
-                        parseMailFromServer(store, fd.getName());
+                        parseMailFromServer(store, fd.getName() + "/", "All Mail", offsetMail, numMails);
+                        parseMailFromServer(store, fd.getName() + "/", "Drafts", offsetMail, numMails);
+                        parseMailFromServer(store, fd.getName() + "/", "Sent Mail", offsetMail, numMails);
+                        parseMailFromServer(store, fd.getName() + "/", "Spam", offsetMail, numMails);
+                        parseMailFromServer(store, fd.getName() + "/", "Starred", offsetMail, numMails);
+                        parseMailFromServer(store, fd.getName() + "/", "Trash", offsetMail, numMails);
+                    }
+                    else {
+                        parseMailFromServer(store, fd.getName(), offsetMail, numMails);
                     }
                 }
             } catch (Exception mex) {
@@ -338,8 +345,8 @@ abstract class PatternFragment extends Fragment {
     * @param String folder    Name folder for check
     * @return void
     * */
-    protected boolean isGmailFolder(String folder) {
-        if (folder.equals("[Gmail]")) {
+    private boolean isGmailFolder(String folder){
+        if (folder.equals("[Gmail]")){
             return true;
         }
         return false;
@@ -351,7 +358,7 @@ abstract class PatternFragment extends Fragment {
     * @param String nameFolder  Folder for save mails in root directory
     * @return void
     * */
-    protected void parseMailFromServer(Store store, String nameFolder) throws MessagingException, IOException {
+    private void parseMailFromServer(Store store, String nameFolder, int offsetMail, int numMails) throws MessagingException, IOException {
         nameFolders.add(nameFolder);
         createDirIfNotExists(String.valueOf(Environment.getExternalStorageDirectory() + "/" + email), nameFolder);
         Folder folderBox = store.getFolder(nameFolder);
@@ -364,6 +371,7 @@ abstract class PatternFragment extends Fragment {
 
         FlagTerm ft = new FlagTerm(new Flags(Flags.Flag.USER), false);
         Message[] messages = folderBox.search(ft);
+        messages = reverseMessageOrder(messages);
         Log.d(TAG, "Новые сообщения " + messages.length);
 
         for (Folder folder : store.getDefaultFolder().list("*")) {
@@ -375,82 +383,91 @@ abstract class PatternFragment extends Fragment {
         arrayContent = new ArrayList<>();
         arrayDateMail = new ArrayList<>();
 
-        for (int i = 0; i < messages.length; i++) {
-            Address[] in = messages[i].getFrom();
-            for (Address address : in) {
-                String decodeAddress = MimeUtility.decodeText(address.toString());
-                System.out.println("FROM:" + address.toString());
-                if (decodeAddress.indexOf("<") == -1 && decodeAddress.indexOf(">") == -1) {
-                    arrayEmail.add(decodeAddress);
-                    arrayFrom.add(decodeAddress);
-                } else {
-                    //add email of sender of mail
-                    String emailValue = decodeAddress.substring(decodeAddress.indexOf("<"), decodeAddress.indexOf(">") + 1);
-                    arrayEmail.add(emailValue);
-                    //add name of sender of mail;
-                    String nameValue = decodeAddress.substring(0, decodeAddress.indexOf("<"));
-                    arrayFrom.add(nameValue);
-                }
-            }
-
-            Object content = new MimeMessage((MimeMessage) messages[i]).getContent();
-            //content = messages[i].getContent();
-            String[] parts = messages[i].getSentDate().toString().split(" ");
-
-            //mail content only string values or mail content images with different string values
-            if (content instanceof String) {
-                String body = (String) content;
-                Log.d(TAG, "SENT DATE String: " + messages[i].getSentDate());
-                //add date of mail
-                arrayDateMail.add(String.valueOf(messages[i].getSentDate().getDate()) + "." + (messages[i].getSentDate().getMonth() + 1) + "."
-                        + (messages[i].getSentDate().getYear() % 100) + "-" + parts[3]);
-                //add subject of mail
-                arraySubject.add(messages[i].getSubject());
-                Log.d(TAG, "SUBJECT String: " + messages[i].getSubject());
-                arrayContent.add(body);
-                Log.d(TAG, "Content String " + body);
-                createMail(arraySubject.get(i), arrayFrom.get(i), arrayEmail.get(i), arrayContent.get(i), arrayDateMail.get(i), nameFolder, email, new ArrayList<String>());
-            } else if (content instanceof Multipart) {
-                Multipart mp = (Multipart) content;
-                BodyPart bp = mp.getBodyPart(0);
-                arrayDateMail.add(String.valueOf(messages[i].getSentDate().getDate()) + "." + (messages[i].getSentDate().getMonth() + 1) + "."
-                        + (messages[i].getSentDate().getYear() % 100) + "-" + parts[3]);
-                Log.d(TAG, "SENT DATE Multipart: " + messages[i].getSentDate());
-                arraySubject.add(messages[i].getSubject());
-                Log.d(TAG, "SUBJECT Multipart: " + messages[i].getSubject());
-                arrayContent.add(bp.getContent().toString());
-
-                System.out.println("-------" + (i + 1) + "-------");
-                System.out.println(messages[i].getSentDate());
-                Multipart multipart = (Multipart) content;
-                List<String> arrayPathAttachFiles = new ArrayList<>();
-
-                for (int j = 0; j < multipart.getCount(); j++) {
-                    BodyPart bodyPart = multipart.getBodyPart(j);
-                    Log.d(TAG, "bodyPart " + bodyPart.getFileName());
-                    Log.d(TAG, "BodyPart " + bodyPart);
-                    if (Part.ATTACHMENT.equalsIgnoreCase(bodyPart.getDisposition())) {
-                        System.out.println("Creating file with name without : " + bodyPart.getFileName());
-                        arrayPathAttachFiles.add(Environment.getExternalStorageDirectory().getAbsolutePath() + "/" + email + "/" + "Attach" + "/" + bodyPart.getFileName());
-                        File f = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + "/" + email + "/" + "Attach" + "/", bodyPart.getFileName());
-                        InputStream is = bodyPart.getInputStream();
-                        FileOutputStream fos = null;
-                        try {
-                            fos = new FileOutputStream(f);
-                            byte[] buf = new byte[4096];
-                            int bytesRead;
-                            while ((bytesRead = is.read(buf)) != -1) {
-                                fos.write(buf, 0, bytesRead);
+        if (messages.length != 0) {
+            for (int i = 0; i < numMails * offsetMail; i++) {
+                try{
+                    if (messages[i] != null) {
+                        Address[] in = messages[i].getFrom();
+                        for (Address address : in) {
+                            String decodeAddress = MimeUtility.decodeText(address.toString());
+                            System.out.println("FROM:" + address.toString());
+                            if (decodeAddress.indexOf("<") == -1 && decodeAddress.indexOf(">") == -1) {
+                                arrayEmail.add(decodeAddress);
+                                arrayFrom.add(decodeAddress);
+                            } else {
+                                //add email of sender of mail
+                                String emailValue = decodeAddress.substring(decodeAddress.indexOf("<"), decodeAddress.indexOf(">") + 1);
+                                arrayEmail.add(emailValue);
+                                //add name of sender of mail;
+                                String nameValue = decodeAddress.substring(0, decodeAddress.indexOf("<"));
+                                arrayFrom.add(nameValue);
                             }
-                            fos.close();
-                        } catch (FileNotFoundException e) {
-                            e.printStackTrace();
+                        }
+
+                        Object content = new MimeMessage((MimeMessage) messages[i]).getContent();
+                        //content = messages[i].getContent();
+                        String[] parts = messages[i].getSentDate().toString().split(" ");
+
+                        //mail content only string values or mail content images with different string values
+                        if (content instanceof String) {
+                            String body = (String) content;
+                            Log.d(TAG, "SENT DATE String: " + messages[i].getSentDate());
+                            //add date of mail
+                            arrayDateMail.add(String.valueOf(messages[i].getSentDate().getDate()) + "." + (messages[i].getSentDate().getMonth() + 1) + "."
+                                    + (messages[i].getSentDate().getYear() % 100) + "-" + parts[3]);
+                            //add subject of mail
+                            arraySubject.add(messages[i].getSubject());
+                            Log.d(TAG, "SUBJECT String: " + messages[i].getSubject());
+                            arrayContent.add(body);
+                            Log.d(TAG, "Content String " + body);
+                            createMail(arraySubject.get(i), arrayFrom.get(i), arrayEmail.get(i), arrayContent.get(i), arrayDateMail.get(i), nameFolder, email, new ArrayList<String>());
+                        } else if (content instanceof Multipart) {
+                            Multipart mp = (Multipart) content;
+                            BodyPart bp = mp.getBodyPart(0);
+                            arrayDateMail.add(String.valueOf(messages[i].getSentDate().getDate()) + "." + (messages[i].getSentDate().getMonth() + 1) + "."
+                                    + (messages[i].getSentDate().getYear() % 100) + "-" + parts[3]);
+                            Log.d(TAG, "SENT DATE Multipart: " + messages[i].getSentDate());
+                            arraySubject.add(messages[i].getSubject());
+                            Log.d(TAG, "SUBJECT Multipart: " + messages[i].getSubject());
+                            arrayContent.add(bp.getContent().toString());
+
+                            System.out.println("-------" + (i + 1) + "-------");
+                            System.out.println(messages[i].getSentDate());
+                            Multipart multipart = (Multipart) content;
+                            List<String> arrayPathAttachFiles = new ArrayList<>();
+
+                            for (int j = 0; j < multipart.getCount(); j++) {
+                                BodyPart bodyPart = multipart.getBodyPart(j);
+                                Log.d(TAG, "bodyPart " + bodyPart.getFileName());
+                                Log.d(TAG, "BodyPart " + bodyPart);
+                                if (Part.ATTACHMENT.equalsIgnoreCase(bodyPart.getDisposition())) {
+                                    System.out.println("Creating file with name without : " + bodyPart.getFileName());
+                                    arrayPathAttachFiles.add(Environment.getExternalStorageDirectory().getAbsolutePath() + "/" + email + "/" + "Attach" + "/" + bodyPart.getFileName() +
+                                            "-" + arrayDateMail.get(i));
+                                    File f = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + "/" + email + "/" + "Attach" + "/", bodyPart.getFileName() +
+                                            "-" + arrayDateMail.get(i));
+                                    InputStream is = bodyPart.getInputStream();
+                                    FileOutputStream fos = null;
+                                    try {
+                                        fos = new FileOutputStream(f);
+                                        byte[] buf = new byte[4096];
+                                        int bytesRead;
+                                        while ((bytesRead = is.read(buf)) != -1) {
+                                            fos.write(buf, 0, bytesRead);
+                                        }
+                                        fos.close();
+                                    } catch (FileNotFoundException e) {
+                                        e.printStackTrace();
+                                    }
+                                }
+                            }
+                            createMail(arraySubject.get(i), arrayFrom.get(i), arrayEmail.get(i), arrayContent.get(i), arrayDateMail.get(i), nameFolder, email, arrayPathAttachFiles);
                         }
                     }
-
                 }
-                createMail(arraySubject.get(i), arrayFrom.get(i), arrayEmail.get(i), arrayContent.get(i), arrayDateMail.get(i), nameFolder, email, arrayPathAttachFiles);
-
+                catch(Exception e){
+                    continue;
+                }
             }
         }
 
@@ -459,11 +476,11 @@ abstract class PatternFragment extends Fragment {
     /*
     * Get mails from server to root directory
     * @param Store store        Store of settings
-    * @param String gmail       Folder of gmail f.r. [Gmail]
+    * @param String gmail       Folder of gmail f.e. [Gmail]
     * @param String nameFolder  Folder for save mails in root directory
     * @return void
     * */
-    protected void parseMailFromServer(Store store, String gmail, String nameFolder) throws MessagingException, IOException {
+    private void parseMailFromServer(Store store, String gmail, String nameFolder, int offsetMail, int numMails) throws MessagingException, IOException {
         nameFolders.add(nameFolder);
         createDirIfNotExists(String.valueOf(Environment.getExternalStorageDirectory() + "/" + email), nameFolder);
         Folder folderBox = store.getFolder(gmail + nameFolder);
@@ -476,6 +493,7 @@ abstract class PatternFragment extends Fragment {
 
         FlagTerm ft = new FlagTerm(new Flags(Flags.Flag.USER), false);
         Message[] messages = folderBox.search(ft);
+        messages = reverseMessageOrder(messages);
         Log.d(TAG, "Новые сообщения " + messages.length);
 
         for (Folder folder : store.getDefaultFolder().list("*")) {
@@ -487,86 +505,109 @@ abstract class PatternFragment extends Fragment {
         arrayContent = new ArrayList<>();
         arrayDateMail = new ArrayList<>();
 
-        for (int i = 0; i < messages.length; i++) {
-            Address[] in = messages[i].getFrom();
-            for (Address address : in) {
-                String decodeAddress = MimeUtility.decodeText(address.toString());
-                System.out.println("FROM:" + address.toString());
-                if (decodeAddress.indexOf("<") == -1 && decodeAddress.indexOf(">") == -1) {
-                    arrayEmail.add(decodeAddress);
-                    arrayFrom.add(decodeAddress);
-                } else {
-                    //add email of sender of mail
-                    String emailValue = decodeAddress.substring(decodeAddress.indexOf("<"), decodeAddress.indexOf(">") + 1);
-                    arrayEmail.add(emailValue);
-                    //add name of sender of mail;
-                    String nameValue = decodeAddress.substring(0, decodeAddress.indexOf("<"));
-                    arrayFrom.add(nameValue);
-                }
-            }
-
-            Object content = new MimeMessage((MimeMessage) messages[i]).getContent();
-            //content = messages[i].getContent();
-            String[] parts = messages[i].getSentDate().toString().split(" ");
-
-            //mail content only string values or mail content images with different string values
-            if (content instanceof String) {
-                String body = (String) content;
-                Log.d(TAG, "SENT DATE String: " + messages[i].getSentDate());
-                //add date of mail
-                arrayDateMail.add(String.valueOf(messages[i].getSentDate().getDate()) + "." + (messages[i].getSentDate().getMonth() + 1) + "."
-                        + (messages[i].getSentDate().getYear() % 100) + "-" + parts[3]);
-                //add subject of mail
-                arraySubject.add(messages[i].getSubject());
-                Log.d(TAG, "SUBJECT String: " + messages[i].getSubject());
-                arrayContent.add(body);
-                Log.d(TAG, "Content String " + body);
-                createMail(arraySubject.get(i), arrayFrom.get(i), arrayEmail.get(i), arrayContent.get(i), arrayDateMail.get(i), nameFolder, email, new ArrayList<String>());
-            } else if (content instanceof Multipart) {
-                Multipart mp = (Multipart) content;
-                BodyPart bp = mp.getBodyPart(0);
-                arrayDateMail.add(String.valueOf(messages[i].getSentDate().getDate()) + "." + (messages[i].getSentDate().getMonth() + 1) + "."
-                        + (messages[i].getSentDate().getYear() % 100) + "-" + parts[3]);
-                Log.d(TAG, "SENT DATE Multipart: " + messages[i].getSentDate());
-                arraySubject.add(messages[i].getSubject());
-                Log.d(TAG, "SUBJECT Multipart: " + messages[i].getSubject());
-                arrayContent.add(bp.getContent().toString());
-
-                System.out.println("-------" + (i + 1) + "-------");
-                System.out.println(messages[i].getSentDate());
-                Multipart multipart = (Multipart) content;
-                List<String> arrayPathAttachFiles = new ArrayList<>();
-
-                for (int j = 0; j < multipart.getCount(); j++) {
-                    BodyPart bodyPart = multipart.getBodyPart(j);
-                    Log.d(TAG, "bodyPart " + bodyPart.getFileName());
-                    Log.d(TAG, "BodyPart " + bodyPart);
-                    if (Part.ATTACHMENT.equalsIgnoreCase(bodyPart.getDisposition())) {
-                        System.out.println("Creating file with name without : " + bodyPart.getFileName());
-                        arrayPathAttachFiles.add(Environment.getExternalStorageDirectory().getAbsolutePath() + "/" + email + "/" + "Attach" + "/" + bodyPart.getFileName());
-                        File f = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + "/" + email + "/" + "Attach" + "/", bodyPart.getFileName());
-                        InputStream is = bodyPart.getInputStream();
-                        FileOutputStream fos = null;
-                        try {
-                            fos = new FileOutputStream(f);
-                            byte[] buf = new byte[4096];
-                            int bytesRead;
-                            while ((bytesRead = is.read(buf)) != -1) {
-                                fos.write(buf, 0, bytesRead);
+        if (messages.length != 0) {
+            for (int i = 0; i < numMails * offsetMail; i++) {
+                try {
+                    if (messages[i] != null) {
+                        Address[] in = messages[i].getFrom();
+                        for (Address address : in) {
+                            String decodeAddress = MimeUtility.decodeText(address.toString());
+                            System.out.println("FROM:" + address.toString());
+                            if (decodeAddress.indexOf("<") == -1 && decodeAddress.indexOf(">") == -1) {
+                                arrayEmail.add(decodeAddress);
+                                arrayFrom.add(decodeAddress);
+                            } else {
+                                //add email of sender of mail
+                                String emailValue = decodeAddress.substring(decodeAddress.indexOf("<"), decodeAddress.indexOf(">") + 1);
+                                arrayEmail.add(emailValue);
+                                //add name of sender of mail;
+                                String nameValue = decodeAddress.substring(0, decodeAddress.indexOf("<"));
+                                arrayFrom.add(nameValue);
                             }
-                            fos.close();
-                        } catch (FileNotFoundException e) {
-                            e.printStackTrace();
+                        }
+
+                        Object content = new MimeMessage((MimeMessage) messages[i]).getContent();
+                        //content = messages[i].getContent();
+                        String[] parts = messages[i].getSentDate().toString().split(" ");
+
+                        //mail content only string values or mail content images with different string values
+                        if (content instanceof String) {
+                            String body = (String) content;
+                            Log.d(TAG, "SENT DATE String: " + messages[i].getSentDate());
+                            //add date of mail
+                            arrayDateMail.add(String.valueOf(messages[i].getSentDate().getDate()) + "." + (messages[i].getSentDate().getMonth() + 1) + "."
+                                    + (messages[i].getSentDate().getYear() % 100) + "-" + parts[3]);
+                            //add subject of mail
+                            arraySubject.add(messages[i].getSubject());
+                            Log.d(TAG, "SUBJECT String: " + messages[i].getSubject());
+                            arrayContent.add(body);
+                            Log.d(TAG, "Content String " + body);
+                            createMail(arraySubject.get(i), arrayFrom.get(i), arrayEmail.get(i), arrayContent.get(i), arrayDateMail.get(i), nameFolder, email, new ArrayList<String>());
+                        } else if (content instanceof Multipart) {
+                            Multipart mp = (Multipart) content;
+                            BodyPart bp = mp.getBodyPart(0);
+                            arrayDateMail.add(String.valueOf(messages[i].getSentDate().getDate()) + "." + (messages[i].getSentDate().getMonth() + 1) + "."
+                                    + (messages[i].getSentDate().getYear() % 100) + "-" + parts[3]);
+                            Log.d(TAG, "SENT DATE Multipart: " + messages[i].getSentDate());
+                            arraySubject.add(messages[i].getSubject());
+                            Log.d(TAG, "SUBJECT Multipart: " + messages[i].getSubject());
+                            arrayContent.add(bp.getContent().toString());
+
+                            System.out.println("-------" + (i + 1) + "-------");
+                            System.out.println(messages[i].getSentDate());
+                            Multipart multipart = (Multipart) content;
+                            List<String> arrayPathAttachFiles = new ArrayList<>();
+
+                            for (int j = 0; j < multipart.getCount(); j++) {
+                                BodyPart bodyPart = multipart.getBodyPart(j);
+                                Log.d(TAG, "bodyPart " + bodyPart.getFileName());
+                                Log.d(TAG, "BodyPart " + bodyPart);
+                                if (Part.ATTACHMENT.equalsIgnoreCase(bodyPart.getDisposition())) {
+                                    System.out.println("Creating file with name without : " + bodyPart.getFileName());
+                                    arrayPathAttachFiles.add(Environment.getExternalStorageDirectory().getAbsolutePath() + "/" + email + "/" + "Attach" + "/" + bodyPart.getFileName() +
+                                            "-" + arrayDateMail.get(i));
+                                    File f = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + "/" + email + "/" + "Attach" + "/", bodyPart.getFileName() +
+                                            "-" + arrayDateMail.get(i));
+                                    InputStream is = bodyPart.getInputStream();
+                                    FileOutputStream fos = null;
+                                    try {
+                                        fos = new FileOutputStream(f);
+                                        byte[] buf = new byte[4096];
+                                        int bytesRead;
+                                        while ((bytesRead = is.read(buf)) != -1) {
+                                            fos.write(buf, 0, bytesRead);
+                                        }
+                                        fos.close();
+                                    } catch (FileNotFoundException e) {
+                                        e.printStackTrace();
+                                    }
+                                }
+                            }
+                            createMail(arraySubject.get(i), arrayFrom.get(i), arrayEmail.get(i), arrayContent.get(i), arrayDateMail.get(i), nameFolder, email, arrayPathAttachFiles);
                         }
                     }
-
+                } catch (Exception e) {
+                    continue;
                 }
-                createMail(arraySubject.get(i), arrayFrom.get(i), arrayEmail.get(i), arrayContent.get(i), arrayDateMail.get(i), nameFolder, email, arrayPathAttachFiles);
-
             }
         }
+    }
+
+    /*
+      * reverse the order of the messages
+      */
+    private static Message[] reverseMessageOrder(Message[] messages) {
+        Message revMessages[] = new Message[messages.length];
+        int i = messages.length - 1;
+        for (int j = 0; j < messages.length; j++, i--) {
+            revMessages[j] = messages[i];
+
+        }
+
+        return revMessages;
 
     }
+
     /*
     * Read mails from root directory + folder
     * @param String folder        Name of directory for readed files with mails

@@ -34,6 +34,7 @@ public class SignIn extends AppCompatActivity {
     private EditText portImapEditText;
     private EditText smtpServerEditText;
     private EditText portSmtpEditText;
+    private EditText numMailEditText;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -46,33 +47,14 @@ public class SignIn extends AppCompatActivity {
         portImapEditText = (EditText) findViewById(R.id.portImapEditText);
         smtpServerEditText = (EditText) findViewById(R.id.smptServerEditText);
         portSmtpEditText = (EditText) findViewById(R.id.portSmtpEditText);
+        numMailEditText = (EditText) findViewById(R.id.numMailEditText);
 
         fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                String host = emailEditText.getText().toString().substring(emailEditText.getText().toString().lastIndexOf("@") + 1);
-
-//                if (host.equals("yandex.ru") || host.equals("yandex.ua")) {
-//                    new Loader("imap.yandex.ru", emailEditText.getText().toString(), passwordEditText.getText().toString()).execute();
-//                }
-//                else{
-//                    if (host.equals("gmail.com")) {
-//                        new Loader("imap.googlemail.com", emailEditText.getText().toString(), passwordEditText.getText().toString()).execute();
-//                    }
-//                    else{
-//                        if (host.equals("ukr.net")) {
-//                            new Loader("imap.ukr.net", emailEditText.getText().toString(), passwordEditText.getText().toString()).execute();
-//                        }
-//                        else{
-//                            if (host.equals("rambler.ru")) {
-//                                new Loader("imap.rambler.ru", emailEditText.getText().toString(), passwordEditText.getText().toString()).execute();
-//                            }
-//                        }
-//                    }
-//                }
                 new Loader(imapServerEditText.getText().toString(), emailEditText.getText().toString(),
-                        passwordEditText.getText().toString(), portImapEditText.getText().toString()).execute();
+                        passwordEditText.getText().toString(), portImapEditText.getText().toString(), Integer.valueOf(numMailEditText.getText().toString())).execute();
             }
         });
     }
@@ -88,12 +70,14 @@ public class SignIn extends AppCompatActivity {
         private int outBoxMail;
         private int draftMail;
         private String uniqId;
+        private int numMails;
 
-        public Loader(String imapHost, String user, String password, String imapPort) {
+        public Loader(String imapHost, String user, String password, String imapPort, int numMails) {
             this.imapHost = imapHost;
             this.user = user;
             this.password = password;
             this.imapPort = imapPort;
+            this.numMails = numMails;
         }
 
         @Override
@@ -116,62 +100,6 @@ public class SignIn extends AppCompatActivity {
                 Folder[] f = store.getDefaultFolder().list();
                 for (Folder fd : f)
                     Log.d(TAG, fd.getName());
-//                Folder deleted = store.getFolder("Удаленные");
-//                deletedMail = deleted.getMessageCount();
-//                Folder outBox = store.getFolder("Отправленные");
-//                outBoxMail = outBox.getMessageCount();
-//                Folder draft = store.getFolder("Черновики");
-//                draftMail = draft.getMessageCount();
-//                Folder[] f = store.getDefaultFolder().list();
-//                Folder deleted;
-//                Folder outBox;
-//                Folder draft;
-//                for (Folder fd : f) {
-//                    Log.d(TAG, fd.getName());
-//                    switch(fd.getName()){
-//                        case "Удаленные":
-//                            deleted = store.getFolder("Удаленные");
-//                            deletedMail = deleted.getMessageCount();
-//                            uniqId = "rus";
-//                            break;
-//
-//                        case "Отправленные":
-//                            outBox = store.getFolder("Отправленные");
-//                            outBoxMail = outBox.getMessageCount();
-//                            uniqId = "rus";
-//                            break;
-//
-//                        case "[Gmail]":
-//                            outBox = store.getFolder("[Gmail]/Sent Mail");
-//                            outBoxMail = outBox.getMessageCount();
-//                            uniqId = "gmail";
-//                            break;
-//
-//                        case "Черновики":
-//                            draft = store.getFolder("Черновики");
-//                            draftMail = draft.getMessageCount();
-//                            uniqId = "rus";
-//                            break;
-//
-//                        case "Sent":
-//                            outBox = store.getFolder("Sent");
-//                            outBoxMail = outBox.getMessageCount();
-//                            uniqId = "eng";
-//                            break;
-//
-//                        case "Drafts":
-//                            draft = store.getFolder("Drafts");
-//                            draftMail = draft.getMessageCount();
-//                            uniqId = "eng";
-//                            break;
-//
-//                        case "Trash":
-//                            deleted = store.getFolder("Trash");
-//                            deletedMail = deleted.getMessageCount();
-//                            uniqId = "eng";
-//                            break;
-//                    }
-//                }
             } catch (Exception mex) {
                 mex.printStackTrace();
                 Toast.makeText(SignIn.this, "Ошибка при подключении", Toast.LENGTH_LONG).show();
@@ -189,6 +117,7 @@ public class SignIn extends AppCompatActivity {
             intent.putExtra(MailManager.IMAP_PORT, portImapEditText.getText().toString());
             intent.putExtra(MailManager.SMTP_SERVER, smtpServerEditText.getText().toString());
             intent.putExtra(MailManager.SMTP_PORT, portSmtpEditText.getText().toString());
+            intent.putExtra(MailManager.NUM_MAILS, numMails);
             intent.putExtra(MailManager.NEW_INBOXMAIL, newMail);
             intent.putExtra(MailManager.ALL_INBOXMAIL,  allMail);
             intent.putExtra(MailManager.DELETEDMAIL,  deletedMail);

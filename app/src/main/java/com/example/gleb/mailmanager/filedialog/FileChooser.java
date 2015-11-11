@@ -23,7 +23,7 @@ import android.content.Context;
 import android.widget.LinearLayout;
 
 /**
- * This interface defines all the methods that a file chooser must implement, in order to being able to make use of the class FileChooserUtils.
+ * This interface defines all the methods that headerAttach file chooser must implement, in order to being able to make use of the class FileChooserUtils.
  */
 interface FileChooser {
 

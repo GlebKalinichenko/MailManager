@@ -13,4 +13,14 @@
         android:orderInCategory="100"
         android:icon="@drawable/ask"
         app:showAsAction="always" />
+    <item android:id="@+id/dencrypt_mail"
+        android:title="Зашифровать письмо"
+        android:orderInCategory="100"
+        android:icon="@drawable/unlock"
+        app:showAsAction="always" />
+    <item android:id="@+id/check_signature"
+        android:title="Проверить подпись"
+        android:orderInCategory="100"
+        android:icon="@drawable/checksignature"
+        app:showAsAction="always" />
 </menu>
