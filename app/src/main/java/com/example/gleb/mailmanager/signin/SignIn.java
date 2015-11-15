@@ -59,7 +59,7 @@ public class SignIn extends AppCompatActivity {
         });
     }
 
-    public class Loader extends AsyncTask<String, String, String[]> {
+    public class Loader extends AsyncTask<String, String, String> {
         private String imapHost;
         private String user;
         private String password;
@@ -81,7 +81,7 @@ public class SignIn extends AppCompatActivity {
         }
 
         @Override
-        protected String[] doInBackground(String... params) {
+        protected String doInBackground(String... params) {
             Properties props = new Properties();
             props.put("mail.imap.port", imapPort);
             props.put("mail.imap.socketFactory.port", imapPort);
@@ -100,31 +100,35 @@ public class SignIn extends AppCompatActivity {
                 Folder[] f = store.getDefaultFolder().list();
                 for (Folder fd : f)
                     Log.d(TAG, fd.getName());
+                return "Connect";
             } catch (Exception mex) {
                 mex.printStackTrace();
-                Toast.makeText(SignIn.this, "Ошибка при подключении", Toast.LENGTH_LONG).show();
+                return "";
             }
-
-            return null;
         }
 
         @Override
-        protected void onPostExecute(String[] value) {
-            Intent intent = new Intent(SignIn.this, MailManager.class);
-            intent.putExtra(MailManager.EMAIL, emailEditText.getText().toString());
-            intent.putExtra(MailManager.PASSWORD, passwordEditText.getText().toString());
-            intent.putExtra(MailManager.IMAP_SERVER, imapServerEditText.getText().toString());
-            intent.putExtra(MailManager.IMAP_PORT, portImapEditText.getText().toString());
-            intent.putExtra(MailManager.SMTP_SERVER, smtpServerEditText.getText().toString());
-            intent.putExtra(MailManager.SMTP_PORT, portSmtpEditText.getText().toString());
-            intent.putExtra(MailManager.NUM_MAILS, numMails);
-            intent.putExtra(MailManager.NEW_INBOXMAIL, newMail);
-            intent.putExtra(MailManager.ALL_INBOXMAIL,  allMail);
-            intent.putExtra(MailManager.DELETEDMAIL,  deletedMail);
-            intent.putExtra(MailManager.OUTBOXMAIL, outBoxMail);
-            intent.putExtra(MailManager.DRAFTMAIL, draftMail);
-            intent.putExtra(MailManager.LANGFOLDER, uniqId);
-            startActivity(intent);
+        protected void onPostExecute(String value) {
+            if (value.equals("Connect")) {
+                Intent intent = new Intent(SignIn.this, MailManager.class);
+                intent.putExtra(MailManager.EMAIL, emailEditText.getText().toString());
+                intent.putExtra(MailManager.PASSWORD, passwordEditText.getText().toString());
+                intent.putExtra(MailManager.IMAP_SERVER, imapServerEditText.getText().toString());
+                intent.putExtra(MailManager.IMAP_PORT, portImapEditText.getText().toString());
+                intent.putExtra(MailManager.SMTP_SERVER, smtpServerEditText.getText().toString());
+                intent.putExtra(MailManager.SMTP_PORT, portSmtpEditText.getText().toString());
+                intent.putExtra(MailManager.NUM_MAILS, numMails);
+                intent.putExtra(MailManager.NEW_INBOXMAIL, newMail);
+                intent.putExtra(MailManager.ALL_INBOXMAIL, allMail);
+                intent.putExtra(MailManager.DELETEDMAIL, deletedMail);
+                intent.putExtra(MailManager.OUTBOXMAIL, outBoxMail);
+                intent.putExtra(MailManager.DRAFTMAIL, draftMail);
+                intent.putExtra(MailManager.LANGFOLDER, uniqId);
+                startActivity(intent);
+            }
+            else{
+                Toast.makeText(SignIn.this, "Ошибка при подключении", Toast.LENGTH_LONG).show();
+            }
         }
     }
 }
