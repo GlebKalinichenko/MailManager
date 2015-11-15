@@ -18,6 +18,7 @@ import java.util.Properties;
 import javax.mail.Flags;
 import javax.mail.Folder;
 import javax.mail.Message;
+import javax.mail.MessagingException;
 import javax.mail.Session;
 import javax.mail.Store;
 import javax.mail.search.FlagTerm;
@@ -35,6 +36,12 @@ public class SignIn extends AppCompatActivity {
     private EditText smtpServerEditText;
     private EditText portSmtpEditText;
     private EditText numMailEditText;
+    private int newMail;
+    private int allMail;
+    private int deletedMail;
+    private int outBoxMail;
+    private int draftMail;
+    private String uniqId;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -64,12 +71,6 @@ public class SignIn extends AppCompatActivity {
         private String user;
         private String password;
         private String imapPort;
-        private int newMail;
-        private int allMail;
-        private int deletedMail;
-        private int outBoxMail;
-        private int draftMail;
-        private String uniqId;
         private int numMails;
 
         public Loader(String imapHost, String user, String password, String imapPort, int numMails) {
@@ -98,8 +99,10 @@ public class SignIn extends AppCompatActivity {
                 newMail = inbox.getNewMessageCount();
                 allMail = inbox.getMessageCount();
                 Folder[] f = store.getDefaultFolder().list();
-                for (Folder fd : f)
+                for (Folder fd : f) {
                     Log.d(TAG, fd.getName());
+                    checkFolder(fd);
+                }
                 return "Connect";
             } catch (Exception mex) {
                 mex.printStackTrace();
@@ -129,6 +132,40 @@ public class SignIn extends AppCompatActivity {
             else{
                 Toast.makeText(SignIn.this, "Ошибка при подключении", Toast.LENGTH_LONG).show();
             }
+        }
+    }
+
+    /*
+    * Check folder for get num of messages in current folder
+    * @param Folder folder        Folder from post server
+    * @return void
+    * */
+    private void checkFolder(Folder folder) throws MessagingException {
+        String folderName = folder.getFullName();
+        switch (folderName.substring(0, 2)){
+            case "Уд":
+                deletedMail = folder.getMessageCount();
+                break;
+
+            case "От":
+                outBoxMail = folder.getMessageCount();
+                break;
+
+            case "Че":
+                draftMail = folder.getMessageCount();
+                break;
+
+            case "De":
+                deletedMail = folder.getMessageCount();
+                break;
+
+            case "Ou":
+                outBoxMail = folder.getMessageCount();
+                break;
+
+            case "Dr":
+                draftMail = folder.getMessageCount();
+                break;
         }
     }
 }
