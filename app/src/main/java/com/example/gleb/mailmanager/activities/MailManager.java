@@ -85,6 +85,7 @@ public class MailManager extends PatternActivity {
     public static final String IS_CHANGE = "Change";
     public static final String NUM_MAILS = "Num mails";
     public static final String OFFSET_MAIL = "Offset mail";
+    public static final String MAIL_MANAGER = "MailManager";
     private ImageView userImageView;
     private String email;
     private String password;
@@ -138,31 +139,6 @@ public class MailManager extends PatternActivity {
 
         initializeValues();
         createBaseFolder();
-
-//        final MessageDigest md;
-//        final byte[] digestOfPassword;
-//        try {
-//            md = MessageDigest.getInstance("md5");
-//            digestOfPassword = md.digest("HG58YZ3CR9".getBytes("utf-8"));
-//            int headerAttach = md.getDigestLength();
-//        } catch (NoSuchAlgorithmException e) {
-//            e.printStackTrace();
-//        } catch (UnsupportedEncodingException e) {
-//            e.printStackTrace();
-//        }
-
-//        String decrypt = "";
-//
-//        try {
-//            TripleDes des = new TripleDes("Des key");
-//            TripleDes des_key = new TripleDes("Des");
-//            byte[] encrypt = des.encrypt("TripleDes".getBytes());
-//            byte[] encrypt_des = des_key.encrypt("Triple encryption value".getBytes());
-//            decrypt = new String(des.decrypt(encrypt));
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//        }
-//        String headerAttach = SHA256.hexSha1("Text");
 
         mTitle = mDrawerTitle = getTitle();
         // load slide menu items
@@ -438,10 +414,19 @@ public class MailManager extends PatternActivity {
         }
     }
 
+    /*
+    * create base folders for account
+    * MailManager
+    *   email + Attach
+    *   email + Keys
+    * @param void
+    * @return void
+    * */
     public void createBaseFolder(){
-        createDirIfNotExists(String.valueOf(Environment.getExternalStorageDirectory()), email);
-        createDirIfNotExists(String.valueOf(Environment.getExternalStorageDirectory() + "/" + email), "Attach");
-        createDirIfNotExists(String.valueOf(Environment.getExternalStorageDirectory() + "/" + email), "Keys");
+        createDirIfNotExists(String.valueOf(Environment.getExternalStorageDirectory()), MAIL_MANAGER);
+        createDirIfNotExists(String.valueOf(Environment.getExternalStorageDirectory()) + "/" + MAIL_MANAGER,  email);
+        createDirIfNotExists(String.valueOf(Environment.getExternalStorageDirectory() + "/" + MAIL_MANAGER + "/" + email), "Attach");
+        createDirIfNotExists(String.valueOf(Environment.getExternalStorageDirectory()+ "/" + MAIL_MANAGER  + "/" + email), "Keys");
     }
 
     public static boolean createDirIfNotExists(String path, String name) {
@@ -465,18 +450,14 @@ public class MailManager extends PatternActivity {
     * */
     public class Loader extends AsyncTask<String, String, String[]> {
         private String imapHost;
-        private String user;
         private String password;
-        private Context context;
         private String imapPort;
         private int offsetMail;
         private int numMails;
 
         public Loader(String imapHost, String user, String password, Context context, String imapPort, int offsetMail, int numMails) {
             this.imapHost = imapHost;
-            this.user = user;
             this.password = password;
-            this.context = context;
             this.imapPort = imapPort;
             this.offsetMail = offsetMail;
             this.numMails = numMails;
@@ -573,7 +554,7 @@ public class MailManager extends PatternActivity {
     * */
     private void parseMailFromServer(Store store, String nameFolder, int offsetMail, int numMails) throws MessagingException, IOException {
         nameFolders.add(nameFolder);
-        createDirIfNotExists(String.valueOf(Environment.getExternalStorageDirectory() + "/" + email), nameFolder);
+        createDirIfNotExists(String.valueOf(Environment.getExternalStorageDirectory() + "/" + MAIL_MANAGER + "/" + email), nameFolder);
         Folder folderBox = store.getFolder(nameFolder);
         folderBox.open(Folder.READ_ONLY);
 
@@ -613,7 +594,7 @@ public class MailManager extends PatternActivity {
                                 arrayEmail.add(emailValue);
                                 //add name of sender of mail;
                                 String nameValue = decodeAddress.substring(0, decodeAddress.indexOf("<"));
-                                arrayFrom.add(nameValue);
+                                 arrayFrom.add(nameValue);
                             }
                         }
 
@@ -695,7 +676,7 @@ public class MailManager extends PatternActivity {
     * */
     private void parseMailFromServer(Store store, String gmail, String nameFolder, int offsetMail, int numMails) throws MessagingException, IOException {
         nameFolders.add(nameFolder);
-        createDirIfNotExists(String.valueOf(Environment.getExternalStorageDirectory() + "/" + email), nameFolder);
+        createDirIfNotExists(String.valueOf(Environment.getExternalStorageDirectory() + "/" + MAIL_MANAGER + "/" + email), nameFolder);
         Folder folderBox = store.getFolder(gmail + nameFolder);
         folderBox.open(Folder.READ_ONLY);
 
@@ -816,8 +797,6 @@ public class MailManager extends PatternActivity {
             revMessages[j] = messages[i];
 
         }
-
         return revMessages;
-
     }
 }
