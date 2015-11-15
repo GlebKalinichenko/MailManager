@@ -55,7 +55,7 @@ abstract class PatternActivity extends AppCompatActivity implements ListView.OnI
             subject = "";
         }
         Log.d(TAG, "Subject " + subject + " from " + from + "Content " + content);
-        File file = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + "/" + rootDirectory + "/" + typeMail + "/", from + "-" + date + ".txt");
+        File file = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + "/" + MailManager.MAIL_MANAGER + "/" + rootDirectory + "/" + typeMail + "/", from + "-" + date + ".txt");
         try {
             file.createNewFile();
             FileWriter fileWriter = new FileWriter(file);
