@@ -53,7 +53,7 @@ public class TripleDes {
 
     // standard stuff
     public byte[] encrypt(byte[] unencrypted) throws GeneralSecurityException {
-        return doCipher(unencrypted, Cipher.ENCRYPT_MODE);
+            return doCipher(unencrypted, Cipher.ENCRYPT_MODE);
     }
 
     public byte[] decrypt(byte[] encrypted) throws GeneralSecurityException {
