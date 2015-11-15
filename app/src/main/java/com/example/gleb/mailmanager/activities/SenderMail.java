@@ -99,6 +99,7 @@ public class SenderMail extends PatternActivity {
     public ArrayList<String> headerAttach;
     private String genKey;
     private TripleDes des;
+    private RSA rsa;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -308,7 +309,7 @@ public class SenderMail extends PatternActivity {
                 if (findGenerateKey(files, toEditText.getText().toString())) {
                     Toast.makeText(SenderMail.this, "Ключ уже сгенерирован", Toast.LENGTH_LONG).show();
                 } else {
-                    RSA rsa = new RSA();
+                    rsa = new RSA();
                     String publicPath = RSA.createFile(toEditText.getText().toString() + "-" + "Public.txt", rsa.getPublicKey().getEncoded(), email);
                     String privatePath = RSA.createFile(toEditText.getText().toString() + "-" + "Private.txt", rsa.getPrivateKey().getEncoded(), email);
 
@@ -412,15 +413,6 @@ public class SenderMail extends PatternActivity {
                     byte[] rsaEncrypt = RSA.encryptRSA(Base64.encode(genKey.getBytes(), Base64.DEFAULT), publicKey);
                     String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(Calendar.getInstance().getTime());
                     String encryptDesKey = RSA.createFile(toEditText.getText().toString() + "-" + timeStamp + "-" + "RsaDes.txt", rsaEncrypt, email);
-
-//                    filePath.add(encryptDesKey);
-//                    headerAttach.add(encryptDesKey.substring(encryptDesKey.lastIndexOf("/") + 1));
-//                    FragmentManager fragmentManager = getSupportFragmentManager();
-//                    FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
-//                    Log.d(TAG, "Name " + filePath);
-//                    ArchiveFragment fragment = new ArchiveFragment(headerAttach);
-//                    fragmentTransaction.add(R.id.fragment_container, fragment);
-//                    fragmentTransaction.commitAllowingStateLoss();
                 } catch (InvalidKeySpecException e) {
                     e.printStackTrace();
                 } catch (NoSuchAlgorithmException e) {
