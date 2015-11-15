@@ -12,6 +12,7 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import com.example.gleb.mailmanager.R;
+import com.example.gleb.mailmanager.activities.MailManager;
 import com.example.gleb.mailmanager.basics.MailStructure;
 import com.example.gleb.mailmanager.recyclerview.RVAdapter;
 import com.example.gleb.mailmanager.sliding.SlidingTabLayout;
@@ -85,7 +86,7 @@ abstract class PatternFragment extends Fragment {
             subject = "";
         }
         Log.d(TAG, "Subject " + subject + " from " + from + "Content " + content);
-        File file = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + "/" + rootDirectory + "/" + typeMail + "/", from + "-" + date + ".txt");
+        File file = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + "/" + MailManager.MAIL_MANAGER + "/" + rootDirectory + "/" + typeMail + "/", from + "-" + date + ".txt");
         try {
             file.createNewFile();
             FileWriter fileWriter = new FileWriter(file);
@@ -119,7 +120,7 @@ abstract class PatternFragment extends Fragment {
     * @return List<MailStructure>      List of mails load from files in root directory + typeMail
     * */
     protected List<MailStructure> readMail(String rootDirectory, String typeMail){
-        String path = Environment.getExternalStorageDirectory().getAbsolutePath() + "/" + rootDirectory + "/" + typeMail + "/";
+        String path = Environment.getExternalStorageDirectory().getAbsolutePath() + "/" + MailManager.MAIL_MANAGER + "/" + rootDirectory + "/" + typeMail + "/";
         Log.d("Files", "Path: " + path);
         File f = new File(path);
 
@@ -259,7 +260,7 @@ abstract class PatternFragment extends Fragment {
     * Delete directories from root directory for update mail
     * */
     protected void deleteInRootDirectory(List<String> folders){
-        delete(new File(Environment.getExternalStorageDirectory() + "/" + email, "Attach"));
+        delete(new File(Environment.getExternalStorageDirectory() + "/" + MailManager.MAIL_MANAGER + "/" + email, "Attach"));
         for (int i = 0; i < folders.size(); i++){
             delete(new File(Environment.getExternalStorageDirectory() + "/" + email, folders.get(i)));
         }
