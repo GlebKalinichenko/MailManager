@@ -26,6 +26,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.webkit.WebView;
 import android.widget.AbsListView;
 import android.widget.AdapterView;
 import android.widget.Button;
@@ -99,6 +100,7 @@ public class ItemMail extends PatternActivity {
     private ArrayList<String> filePath;
     public byte[] bytesRsaEncrypt;
     public byte[] byteSignature;
+    private WebView webView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -118,12 +120,14 @@ public class ItemMail extends PatternActivity {
         dateTextView = (TextView) findViewById(R.id.dateTextView);
         subjectTextView = (TextView) findViewById(R.id.subjectTextView);
         contentTextView = (TextView) findViewById(R.id.contentTextView);
+        webView = (WebView) findViewById(R.id.webView);
 
         fromTextView.setText(mail.getFrom());
         emailTextView.setText(mail.getEmail());
         dateTextView.setText(mail.getDate());
         subjectTextView.setText(mail.getSubject());
         contentTextView.setText(Html.fromHtml(mail.getContent()));
+        webView.loadData(mail.getContent(), "text/html; charset=UTF-8;", null);
 
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
