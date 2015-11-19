@@ -27,6 +27,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.webkit.WebView;
+import android.webkit.WebViewClient;
 import android.widget.AbsListView;
 import android.widget.AdapterView;
 import android.widget.Button;
@@ -127,6 +128,18 @@ public class ItemMail extends PatternActivity {
         dateTextView.setText(mail.getDate());
         subjectTextView.setText(mail.getSubject());
         contentTextView.setText(Html.fromHtml(mail.getContent()));
+
+        webView.getSettings().setJavaScriptEnabled(true);
+        webView.addJavascriptInterface(new JavaScriptInterface(this), "HtmlViewer");
+
+        webView.setWebViewClient(new WebViewClient() {
+            @Override
+            public void onPageFinished(WebView view, String url) {
+                webView.loadUrl("javascript:window.HtmlViewer.showHTML" +
+                        "(document.getElementsByTagName('body')[0].innerHTML);");
+            }
+        });
+
         webView.loadData(mail.getContent(), "text/html; charset=UTF-8;", null);
 
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
@@ -221,6 +234,21 @@ public class ItemMail extends PatternActivity {
 
     @Override
     public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+
+    }
+
+    class JavaScriptInterface {
+        private Context ctx;
+
+        JavaScriptInterface(Context ctx) {
+            this.ctx = ctx;
+        }
+
+        public void showHTML(String html) {
+            Toast.makeText(getApplicationContext(), html, Toast.LENGTH_LONG).show();
+            new AlertDialog.Builder(ctx).setTitle("HTML Code").setMessage(html)
+                    .setPositiveButton(android.R.string.ok, null).setCancelable(false).create().show();
+        }
 
     }
 

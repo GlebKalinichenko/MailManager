@@ -14,6 +14,7 @@ import android.widget.TextView;
 import com.example.gleb.mailmanager.R;
 import com.example.gleb.mailmanager.activities.MailManager;
 import com.example.gleb.mailmanager.basics.MailStructure;
+import com.example.gleb.mailmanager.recyclerview.DividerItemDecoration;
 import com.example.gleb.mailmanager.recyclerview.RVAdapter;
 import com.example.gleb.mailmanager.sliding.SlidingTabLayout;
 import com.example.gleb.mailmanager.swipe.SuperSwipeRefreshLayout;
@@ -221,6 +222,9 @@ abstract class PatternFragment extends Fragment {
             //read mail from file from directory of typeMail in root directory
             mailStructures = readMail(email, typeMail);
             RVAdapter adapter = new RVAdapter(mailStructures, context);
+            RecyclerView.ItemDecoration itemDecoration = new
+                    DividerItemDecoration(getActivity(), DividerItemDecoration.VERTICAL_LIST);
+            rv.addItemDecoration(itemDecoration);
             adapter.notifyDataSetChanged();
             rv.setAdapter(adapter);
         }

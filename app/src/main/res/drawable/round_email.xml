@@ -1,7 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<shape xmlns:android="http://schemas.android.com/apk/res/android"
-    android:shape="oval">
-    <corners android:radius="10dip"/>
-    <stroke android:color="@color/colorPrimary" android:width="2dip"/>
-    <solid android:color="@android:color/transparent"/>
-</shape>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android" >
+    <item android:id="@+id/shape_id">
+        <shape xmlns:android="http://schemas.android.com/apk/res/android"
+            android:shape="oval">
+            <corners android:topLeftRadius="60dp" android:topRightRadius="60dp"    android:bottomLeftRadius="60dp" android:bottomRightRadius="60dp"/>
+            <stroke android:color="@color/colorPrimary" android:width="2dip"/>
+            <solid android:color="@color/colorPrimary"/>
+        </shape>
+    </item>
+</layer-list>

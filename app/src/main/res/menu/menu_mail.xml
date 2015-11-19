@@ -13,4 +13,8 @@
         android:orderInCategory="100"
         android:icon="@drawable/ask"
         app:showAsAction="always" />
+    <item android:id="@+id/settings"
+        android:title="Настройки"
+        android:orderInCategory="100"
+        app:showAsAction="never" />
 </menu>

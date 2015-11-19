@@ -1,6 +1,8 @@
 package com.example.gleb.mailmanager.recyclerview;
 
 import android.content.Context;
+import android.graphics.drawable.GradientDrawable;
+import android.graphics.drawable.LayerDrawable;
 import android.support.v7.widget.CardView;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
@@ -29,7 +31,7 @@ public class RVAdapter extends RecyclerView.Adapter<RVAdapter.MailViewHolder> {
     }
 
     public static class MailViewHolder extends RecyclerView.ViewHolder {
-        CardView cv;
+//        CardView cv;
         TextView fromName;
         TextView fromEmail;
         TextView subject;
@@ -40,9 +42,9 @@ public class RVAdapter extends RecyclerView.Adapter<RVAdapter.MailViewHolder> {
         MailViewHolder(View itemView, Context context) {
             super(itemView);
             this.context = context;
-            cv = (CardView)itemView.findViewById(R.id.cv);
+//            cv = (CardView)itemView.findViewById(R.id.cv);
             fromName = (TextView)itemView.findViewById(R.id.fromName);
-            fromEmail = (TextView)itemView.findViewById(R.id.fromEmail);
+//            fromEmail = (TextView)itemView.findViewById(R.id.fromEmail);
             subject = (TextView)itemView.findViewById(R.id.subject);
             photoUser = (TextView)itemView.findViewById(R.id.photoUser);
             attachImageView = (ImageView)itemView.findViewById(R.id.attachImageView);
@@ -70,20 +72,38 @@ public class RVAdapter extends RecyclerView.Adapter<RVAdapter.MailViewHolder> {
     @Override
     public void onBindViewHolder(MailViewHolder personViewHolder, int i) {
         personViewHolder.fromName.setText(mailStructures.get(i).getFrom());
-        personViewHolder.fromEmail.setText(mailStructures.get(i).getEmail());
+//        personViewHolder.fromEmail.setText(mailStructures.get(i).getEmail());
         personViewHolder.subject.setText(mailStructures.get(i).getSubject());
         personViewHolder.photoUser.setText(mailStructures.get(i).getFrom().substring(0, 1));
+
+        View v = personViewHolder.itemView.findViewById(R.id.photoUser);
+
+        LayerDrawable bgDrawable = (LayerDrawable)v.getBackground();
+        final GradientDrawable shape = (GradientDrawable) bgDrawable.findDrawableByLayerId(R.id.shape_id);
+
         if (i % 2 == 0) {
-            personViewHolder.photoUser.setTextColor(context.getResources().getColor(R.color.colorAccent));
+            shape.setColor(context.getResources().getColor(R.color.colorAccent));
         }
         else{
             if (i % 3 == 0){
-                personViewHolder.photoUser.setTextColor(context.getResources().getColor(R.color.colorPrimary));
+                shape.setColor(context.getResources().getColor(R.color.colorPrimary));
             }
             else{
-                personViewHolder.photoUser.setTextColor(context.getResources().getColor(R.color.colorPrimaryDark));
+                shape.setColor(context.getResources().getColor(R.color.colorPrimaryDark));
             }
         }
+
+//        if (i % 2 == 0) {
+//            personViewHolder.photoUser.setBackgroundColor(context.getResources().getColor(R.color.colorAccent));
+//        }
+//        else{
+//            if (i % 3 == 0){
+//                personViewHolder.photoUser.setBackgroundColor(context.getResources().getColor(R.color.colorPrimary));
+//            }
+//            else{
+//                personViewHolder.photoUser.setBackgroundColor(context.getResources().getColor(R.color.colorPrimaryDark));
+//            }
+//        }
         if (!isTheSame(mailStructures.get(i).getAttachFiles(), new String[]{""})){
             personViewHolder.attachImageView.setVisibility(ImageView.VISIBLE);
         }
