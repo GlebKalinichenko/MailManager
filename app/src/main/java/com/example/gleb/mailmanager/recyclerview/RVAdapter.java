@@ -31,9 +31,9 @@ public class RVAdapter extends RecyclerView.Adapter<RVAdapter.MailViewHolder> {
     }
 
     public static class MailViewHolder extends RecyclerView.ViewHolder {
-//        CardView cv;
         TextView fromName;
         TextView fromEmail;
+        TextView contentMail;
         TextView subject;
         TextView photoUser;
         ImageView attachImageView;
@@ -42,19 +42,13 @@ public class RVAdapter extends RecyclerView.Adapter<RVAdapter.MailViewHolder> {
         MailViewHolder(View itemView, Context context) {
             super(itemView);
             this.context = context;
-//            cv = (CardView)itemView.findViewById(R.id.cv);
             fromName = (TextView)itemView.findViewById(R.id.fromName);
 //            fromEmail = (TextView)itemView.findViewById(R.id.fromEmail);
+            contentMail = (TextView)itemView.findViewById(R.id.content);
             subject = (TextView)itemView.findViewById(R.id.subject);
             photoUser = (TextView)itemView.findViewById(R.id.photoUser);
             attachImageView = (ImageView)itemView.findViewById(R.id.attachImageView);
         }
-
-//        public void setItem(String item) {
-//            mItem = item;
-//            mTextView.setText(item);
-//        }
-
     }
 
     @Override
@@ -72,6 +66,7 @@ public class RVAdapter extends RecyclerView.Adapter<RVAdapter.MailViewHolder> {
     @Override
     public void onBindViewHolder(MailViewHolder personViewHolder, int i) {
         personViewHolder.fromName.setText(mailStructures.get(i).getFrom());
+        personViewHolder.contentMail.setText(mailStructures.get(i).getContent());
 //        personViewHolder.fromEmail.setText(mailStructures.get(i).getEmail());
         personViewHolder.subject.setText(mailStructures.get(i).getSubject());
         personViewHolder.photoUser.setText(mailStructures.get(i).getFrom().substring(0, 1));
@@ -93,17 +88,6 @@ public class RVAdapter extends RecyclerView.Adapter<RVAdapter.MailViewHolder> {
             }
         }
 
-//        if (i % 2 == 0) {
-//            personViewHolder.photoUser.setBackgroundColor(context.getResources().getColor(R.color.colorAccent));
-//        }
-//        else{
-//            if (i % 3 == 0){
-//                personViewHolder.photoUser.setBackgroundColor(context.getResources().getColor(R.color.colorPrimary));
-//            }
-//            else{
-//                personViewHolder.photoUser.setBackgroundColor(context.getResources().getColor(R.color.colorPrimaryDark));
-//            }
-//        }
         if (!isTheSame(mailStructures.get(i).getAttachFiles(), new String[]{""})){
             personViewHolder.attachImageView.setVisibility(ImageView.VISIBLE);
         }
