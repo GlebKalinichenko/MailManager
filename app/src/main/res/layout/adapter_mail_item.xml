@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent" android:layout_height="wrap_content"
-    android:padding="16dp">
+    android:paddingTop="16dp"
+    android:paddingLeft="16dp"
+    android:paddingRight="16dp">
 
         <RelativeLayout
             android:layout_width="match_parent"
@@ -21,7 +23,7 @@
                 android:gravity="center_vertical|center_horizontal"/>
 
             <TextView
-                android:layout_width="wrap_content"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:id="@+id/fromName"
                 android:layout_toRightOf="@+id/photoUser"
@@ -29,34 +31,13 @@
                 android:text="FSNT"
                 android:textSize="20sp"
                 android:layout_below="@+id/photoUser"
-                android:singleLine="true"/>
-            <!--<TextView-->
-                <!--android:layout_width="wrap_content"-->
-                <!--android:layout_height="wrap_content"-->
-                <!--android:id="@+id/fromEmail"-->
-                <!--android:layout_toRightOf="@+id/photoUser"-->
-                <!--android:layout_below="@+id/fromName"-->
-                <!--android:textSize="15sp"/>-->
-            <!--<TextView-->
-                <!--android:layout_width="wrap_content"-->
-                <!--android:layout_height="wrap_content"-->
-                <!--android:id="@+id/subject"-->
-                <!--android:layout_toRightOf="@+id/photoUser"-->
-                <!--android:layout_below="@+id/fromEmail"-->
-                <!--android:textSize="15sp"/>-->
-
-            <!--<ImageView-->
-                <!--android:layout_width="30dp"-->
-                <!--android:layout_height="30dp"-->
-                <!--android:id="@+id/attachImageView"-->
-                <!--android:src="@drawable/attach"-->
-                <!--android:layout_alignBottom="@+id/fromEmail"-->
-                <!--android:layout_alignParentRight="true"-->
-                <!--android:layout_alignParentEnd="true"-->
-                <!--android:visibility="invisible"/>-->
+                android:singleLine="true"
+                android:textStyle="bold"
+                android:fontFamily="sans-serif"
+                android:layout_marginRight="20dp"/>
 
             <TextView
-                android:layout_width="wrap_content"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:id="@+id/subject"
                 android:text="A"
@@ -64,10 +45,34 @@
                 android:layout_below="@+id/fromName"
                 android:layout_alignLeft="@+id/fromName"
                 android:layout_alignStart="@+id/fromName"
-                android:singleLine="true"/>
+                android:singleLine="true"
+                android:fontFamily="sans-serif"
+                android:layout_marginRight="20dp"/>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:id="@+id/content"
+                android:text="A"
+                android:textSize="15sp"
+                android:layout_below="@+id/subject"
+                android:layout_alignLeft="@+id/fromName"
+                android:layout_alignStart="@+id/fromName"
+                android:singleLine="true"
+                android:fontFamily="sans-serif-thin"
+                android:layout_marginRight="20dp"/>
 
             <ImageView
-                android:layout_width="30dp"
+                android:layout_width="15dp"
+                android:layout_height="15dp"
+                android:id="@+id/settingsImageView"
+                android:src="@drawable/settings"
+                android:layout_below="@+id/subject"
+                android:layout_alignRight="@+id/attachImageView"
+                android:layout_alignEnd="@+id/attachImageView" />
+
+            <ImageView
+                android:layout_width="15dp"
                 android:layout_height="30dp"
                 android:id="@+id/attachImageView"
                 android:src="@drawable/attach"

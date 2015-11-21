@@ -121,7 +121,7 @@ public class ItemMail extends PatternActivity {
         dateTextView = (TextView) findViewById(R.id.dateTextView);
         subjectTextView = (TextView) findViewById(R.id.subjectTextView);
         contentTextView = (TextView) findViewById(R.id.contentTextView);
-        webView = (WebView) findViewById(R.id.webView);
+//        webView = (WebView) findViewById(R.id.webView);
 
         fromTextView.setText(mail.getFrom());
         emailTextView.setText(mail.getEmail());
@@ -129,18 +129,18 @@ public class ItemMail extends PatternActivity {
         subjectTextView.setText(mail.getSubject());
         contentTextView.setText(Html.fromHtml(mail.getContent()));
 
-        webView.getSettings().setJavaScriptEnabled(true);
-        webView.addJavascriptInterface(new JavaScriptInterface(this), "HtmlViewer");
-
-        webView.setWebViewClient(new WebViewClient() {
-            @Override
-            public void onPageFinished(WebView view, String url) {
-                webView.loadUrl("javascript:window.HtmlViewer.showHTML" +
-                        "(document.getElementsByTagName('body')[0].innerHTML);");
-            }
-        });
-
-        webView.loadData(mail.getContent(), "text/html; charset=UTF-8;", null);
+//        webView.getSettings().setJavaScriptEnabled(true);
+//        webView.addJavascriptInterface(new JavaScriptInterface(this), "HtmlViewer");
+//
+//        webView.setWebViewClient(new WebViewClient() {
+//            @Override
+//            public void onPageFinished(WebView view, String url) {
+//                webView.loadUrl("javascript:window.HtmlViewer.showHTML" +
+//                        "(document.getElementsByTagName('body')[0].innerHTML);");
+//            }
+//        });
+//
+//        webView.loadData(mail.getContent(), "text/html; charset=UTF-8;", null);
 
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
